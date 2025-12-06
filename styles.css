@@ -1,4 +1,4 @@
-/* Farming CBA Tool — Green farm-themed paleteteee */
+/* Farming CBA Tool — Green farm-themed palette */
 :root{
   --bg:#0c1f15;            /* deep evergreen */
   --bg-2:#0f2a1b;          /* darker evergreen */
@@ -56,6 +56,7 @@ button.primary{
 }
 button.ghost{background:rgba(116,209,140,.10)}
 button.danger{background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.4);color:#ffe3e3}
+button:disabled{opacity:.6;cursor:not-allowed}
 
 /* Tabs */
 .tabs{
@@ -79,7 +80,7 @@ button.danger{background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.4)
   border-radius:16px;padding:18px;max-width:1200px;margin:0 auto
 }
 h1,h2,h3{margin:6px 0 12px}
-h1.cover-title{font-size:26px;margin-top:6px}
+h1.cover-title{font-size:26px;margin-top:6px;text-align:center}
 h2{font-size:18px}
 h3{font-size:15px}
 h4{margin:8px 0}
@@ -96,22 +97,13 @@ h5{margin:8px 0 4px}
   .grid-3,.grid-3-hero,.grid-4{grid-template-columns:1fr}
 }
 
-/* Small input grid */
-.small-input-grid{
-  grid-template-columns:repeat(2,minmax(0,1fr));
-}
-@media (max-width:900px){
-  .small-input-grid{
-    grid-template-columns:1fr;
-  }
-}
-
 /* Fields */
 .field label{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
 .field input,.field select,.field textarea{
   width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);
   background:rgba(10,35,22,.55);color:#fff;outline:none
 }
+.field input[readonly]{opacity:.8;cursor:default}
 textarea{resize:vertical}
 .stack{display:flex;flex-direction:column;gap:12px}
 .item{
@@ -136,7 +128,9 @@ textarea{resize:vertical}
   background:linear-gradient(180deg,rgba(116,209,140,.10),rgba(255,255,255,.02));
   border:1px solid var(--border);padding:12px;border-radius:12px
 }
+.kpis-compact .metric .value{font-size:15px}
 
+/* Cards & stats */
 .card{border:1px solid var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
 .stats div{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:8px;padding:6px;color:#e9f1ff}
@@ -148,10 +142,16 @@ textarea{resize:vertical}
 .muted{color:var(--muted)}
 .small{font-size:12px}
 
-/* Preview */
+/* Preview tables */
 .preview{overflow:auto;border:1px dashed var(--border);border-radius:8px;margin:8px 0}
 .preview table{width:100%;border-collapse:collapse}
 .preview th,.preview td{border:1px solid var(--border);padding:6px;text-align:left}
+
+/* Discount schedule styling */
+.discount-schedule table input{
+  width:100%;padding:6px 8px;border-radius:8px;
+  border:1px solid var(--border);background:rgba(10,35,22,.6);color:#fff;font-size:12px;
+}
 
 /* Cover */
 .cover-panel{padding-top:22px}
@@ -171,6 +171,8 @@ textarea{resize:vertical}
 }
 .badge span{font-size:18px}
 
+.cover-overview{margin:12px 0}
+
 /* Explain blocks */
 .explain{border:1px solid var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.02);margin-bottom:12px}
 .explain .note{margin-top:8px;color:#d4f3de}
@@ -181,37 +183,11 @@ textarea{resize:vertical}
   color:var(--muted);padding:0 18px
 }
 
-/* Discount schedule */
-.disc-schedule-wrapper{
-  overflow-x:auto;margin-top:8px
-}
-.disc-schedule{
-  border-collapse:collapse;width:100%;font-size:12px
-}
-.disc-schedule th,.disc-schedule td{
-  border:1px solid var(--border);padding:6px;text-align:left
-}
-.disc-schedule input{
-  width:100%;padding:4px 6px;font-size:12px;border-radius:8px;
-  border:1px solid var(--border);background:rgba(10,35,22,.55);color:#fff
-}
+/* Depreciation summary */
+.dep-table{width:100%;border-collapse:collapse;font-size:13px}
+.dep-table th,.dep-table td{border:1px solid var(--border);padding:6px;text-align:left}
 
-/* Projection table */
-.projection-table{
-  width:100%;border-collapse:collapse;font-size:12px;margin-top:6px
-}
-.projection-table th,.projection-table td{
-  border:1px solid var(--border);padding:6px;text-align:left
-}
-.projection-table th{background:rgba(255,255,255,.03)}
-
-/* Sensitivity table */
-.sensitivity-table{
-  width:100%;border-collapse:collapse;font-size:12px
-}
-.sensitivity-table th,.sensitivity-table td{
-  border:1px solid var(--border);padding:6px;text-align:left
-}
-.sensitivity-table th{background:rgba(255,255,255,.03)}
+/* Time series chart */
+#timeNpvChart{margin-top:6px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.01)}
 
 /* Print report (injected) uses its own stylesheet in app.js */
