@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Farming CBA Tool - Newcastle Business School</title>
+  <title>Farming CBA Tool — Newcastle Business School</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
   <!-- SheetJS for Excel import/export -->
@@ -40,7 +40,7 @@
     <button data-tab="help">How to Use</button>
   </nav>
 
-  <!-- COVER / OVERVIEW -->
+  <!-- COVER -->
   <section id="tab-cover" class="tab-panel show">
     <div class="panel cover-panel">
       <div class="cover-hero">
@@ -52,73 +52,86 @@
       </div>
       <h1 class="cover-title">Farming Cost–Benefit Analysis (CBA) Tool</h1>
       <p class="cover-subtitle">
-        A structured, transparent cost-benefit framework for farm trials, soil interventions, and adoption decisions.
+        A practical, transparent benefit–cost framework for farm trials and adoption decisions.
       </p>
 
-      <div class="grid-3-hero">
+      <div class="grid-3-hero cover-overview">
         <div class="callout">
           <div class="title">Purpose</div>
           <p>
-            This online tool supports evidence-informed decisions on farming and soil management practices. It combines
-            <b>direct outputs</b> (yield, biomass, sold product), <b>treatments</b>, <b>indirect soil health benefits</b>,
-            <b>costs and depreciation</b>, <b>time horizon and discounting</b>, and <b>simulation</b> to compute
-            economic indicators including NPV, BCR, IRR, ROI, payback period, gross margin, and gross profit margin.
+            Structure ex ante and ex post CBAs for farming projects, linking <b>treatments</b>,
+            <b>outputs</b>, <b>soil and indirect benefits</b>, and <b>production costs</b> into
+            time-based projections and standard economic indicators.
           </p>
         </div>
         <div class="callout">
           <div class="title">Structure</div>
           <p>
-            The tool is organised into modules:
-            <b>Project</b> information and stakeholders; <b>Time</b> horizon and discounting
-            (constant or time-varying rates); <b>Outputs</b> for direct benefits;
-            <b>Treatments</b> (up to 64); <b>Indirect benefits</b> for soil health and risk;
-            <b>Costs</b> and depreciation; <b>Database</b> and <b>Load</b> for integrating external datasets;
-            <b>Simulation</b> for uncertainty and sensitivity; and a consolidated <b>Report</b>.
+            The tool walks you through <b>Project information</b>, <b>Time horizon & discounting</b>,
+            <b>Outputs and treatments</b>, <b>Indirect benefits</b>, <b>Cost modules & depreciation</b>,
+            <b>Database integration</b>, <b>Simulation</b>, and <b>Reporting</b>.
           </p>
         </div>
         <div class="callout">
           <div class="title">Functionality</div>
           <p>
-            Users can enter project and treatment data, align outputs with treatments, configure discounting scenarios,
-            run simulations with ±5–25% variation in prices and costs, and generate time-based projection reports
-            (5–25 years) including control versus treatment comparisons, rankings, and graphics-ready tables suitable
-            for export to Excel, PDF, or external reporting tools such as Microsoft Copilot.
+            Compute NPV, BCR, IRR, ROI, payback, gross margins, and time-based projections for control
+            and treatment groups, with Monte Carlo simulation and structured import/export to Excel.
           </p>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top:14px">
+      <div class="grid-2">
+        <div class="callout">
+          <div class="title">Cover page</div>
+          <p>
+            Use this page as the “cover sheet” when sharing results. The project name, lead, and
+            last updated date will appear in exported reports for documentation and governance.
+          </p>
+          <p class="muted small">
+            Emojis act as placeholders; official university or partner logos can be added for
+            production deployment.
+          </p>
+        </div>
         <div class="callout">
           <div class="title">Get Started</div>
           <ol class="help-steps">
-            <li>Open <b>Project</b> to enter project, stakeholder, and activity information.</li>
-            <li>Set <b>Time</b> horizon, choose constant or time-varying discount rates, and specify adoption and risk.</li>
-            <li>Define <b>Outputs</b> and configure the cropping system (single or mixed crop) and key assumptions.</li>
-            <li>Add <b>Treatments</b> (control and alternatives) including areas, replication, and cost breakdowns.</li>
-            <li>Capture <b>Indirect benefits</b> such as soil health improvements, soil carbon, and risk reduction.</li>
-            <li>Specify <b>Costs</b>, depreciation settings, and production-only economic costs.</li>
-            <li>Use <b>Database</b> and <b>Load</b> to tag and import data from external sources (farm trials, ABARES, GRDC, etc.).</li>
-            <li>Run <b>Simulation</b> and <b>Report</b> for projections and comparative rankings.</li>
+            <li>Click <b>Start</b> or open the <b>Project</b> tab.</li>
+            <li>Enter <b>Project information</b>, stakeholder groups, and key activities.</li>
+            <li>Define <b>Time horizon & discount rates</b>, including optional schedules.</li>
+            <li>Set <b>Outputs</b>, <b>Treatments</b>, <b>Benefits</b>, and <b>Costs</b>.</li>
+            <li>Use <b>Load</b> to connect Excel templates and trial datasets.</li>
+            <li>Review <b>Report</b>, run <b>Simulation</b>, and export.</li>
           </ol>
           <div class="toolbar">
             <button data-tab-jump="project" class="primary">Start now</button>
             <button data-tab-jump="load" class="ghost">Load data</button>
           </div>
         </div>
-        <div class="callout">
-          <div class="title">At a glance</div>
-          <div class="grid-3 cover-badges">
-            <div class="badge"><span>🌾</span> Outputs: yield, biomass, antlers/harvest, sold output</div>
-            <div class="badge"><span>🚜</span> Up to 64 treatments, with control group and replications</div>
-            <div class="badge"><span>🧪</span> Soil health: chemical, physical, biological, carbon, water retention</div>
-            <div class="badge"><span>💰</span> Costs: capital, labour, materials, services, with depreciation</div>
-            <div class="badge"><span>📊</span> Indicators: NPV, BCR, IRR, ROI, payback, gross margins</div>
-            <div class="badge"><span>🧮</span> Simulation: ±5–25% variation in prices, costs, adoption, risk</div>
-          </div>
+      </div>
+
+      <div class="grid-3 cover-badges">
+        <div class="badge">
+          <span>🌾</span> Outputs: yield, biomass, quality, sold output
+        </div>
+        <div class="badge">
+          <span>🚜</span> Treatments: up to 64 practices, including control
+        </div>
+        <div class="badge">
+          <span>📚</span> Sources: Farm trials, Plant farm, ABARES, GRDC, input receipts
+        </div>
+        <div class="badge">
+          <span>📈</span> Indicators: NPV, BCR, IRR, ROI, payback, gross margins
+        </div>
+        <div class="badge">
+          <span>🧮</span> Simulation: uncertainty in discounting, adoption, risk, prices, costs
+        </div>
+        <div class="badge">
+          <span>📤</span> Export: Excel / CSV / print-ready report
         </div>
       </div>
 
-      <div class="muted small" style="margin-top:10px">
+      <div class="muted small">
         © Newcastle Business School — Demo tool. Contact:
         <a href="mailto:frank.agbola@newcastle.edu.au">frank.agbola@newcastle.edu.au</a>
       </div>
@@ -128,8 +141,7 @@
   <!-- PROJECT -->
   <section id="tab-project" class="tab-panel">
     <div class="panel">
-      <h2>Project information and stakeholders</h2>
-
+      <h2>Project setup</h2>
       <div class="grid-2">
         <div class="field">
           <label>Project name</label>
@@ -140,12 +152,12 @@
           <input id="projectLead" placeholder="Name of project lead" />
         </div>
         <div class="field">
-          <label>Project team</label>
-          <input id="projectTeam" placeholder="List of key team members" />
+          <label>Analyst(s)</label>
+          <input id="analystNames" />
         </div>
         <div class="field">
-          <label>Analyst(s) (CBA)</label>
-          <input id="analystNames" />
+          <label>Project team (names)</label>
+          <textarea id="projectTeam" rows="2" placeholder="List core project team members"></textarea>
         </div>
         <div class="field">
           <label>Organisation</label>
@@ -163,10 +175,6 @@
           <label>Last updated (YYYY-MM-DD)</label>
           <input id="lastUpdated" />
         </div>
-        <div class="field">
-          <label>Project start year</label>
-          <input id="projectStartYear" type="number" />
-        </div>
       </div>
 
       <div class="field">
@@ -175,8 +183,9 @@
       </div>
 
       <div class="field">
-        <label>Objectives of the project</label>
-        <textarea id="projectObjectives" rows="3"></textarea>
+        <label>Project objectives</label>
+        <textarea id="projectObjectives" rows="3"
+          placeholder="Summarise main objectives, e.g. yield/quality targets, risk reduction, soil health goals."></textarea>
       </div>
 
       <div class="field">
@@ -190,57 +199,31 @@
           <textarea id="withProject" rows="4"></textarea>
         </div>
         <div class="field">
-          <label>Without-project (control) scenario</label>
+          <label>Without-project (counterfactual) scenario</label>
           <textarea id="withoutProject" rows="4"></textarea>
         </div>
       </div>
 
-      <div class="grid-2" style="margin-top:14px">
-        <div class="callout">
-          <div class="title">Project activities</div>
-          <p class="small muted">
-            List key activities such as data collection, farm trials, soil sampling, research, modelling, and reporting.
-          </p>
-          <div class="grid-2 small-input-grid">
-            <div class="field"><label>Activity 1</label><input id="activity1" /></div>
-            <div class="field"><label>Activity 2</label><input id="activity2" /></div>
-            <div class="field"><label>Activity 3</label><input id="activity3" /></div>
-            <div class="field"><label>Activity 4</label><input id="activity4" /></div>
-            <div class="field"><label>Activity 5</label><input id="activity5" /></div>
-            <div class="field"><label>Activity 6</label><input id="activity6" /></div>
-            <div class="field"><label>Activity 7</label><input id="activity7" /></div>
-            <div class="field"><label>Activity 8</label><input id="activity8" /></div>
-            <div class="field"><label>Activity 9</label><input id="activity9" /></div>
-            <div class="field"><label>Activity 10</label><input id="activity10" /></div>
-          </div>
+      <h3>Project activities and stakeholders</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label>Key project activities</label>
+          <textarea id="projectActivities" rows="4"
+            placeholder="Data collection, field trials, extension, training, modelling, stakeholder engagement, etc."></textarea>
         </div>
-        <div class="callout">
-          <div class="title">Stakeholder groups (up to 10)</div>
-          <p class="small muted">
-            Identify stakeholder groups that benefit from the project (for example, grain growers, advisers, industry
-            bodies, local communities, environment).
-          </p>
-          <div class="grid-2 small-input-grid">
-            <div class="field"><label>Stakeholder 1</label><input id="stakeholder1" /></div>
-            <div class="field"><label>Stakeholder 2</label><input id="stakeholder2" /></div>
-            <div class="field"><label>Stakeholder 3</label><input id="stakeholder3" /></div>
-            <div class="field"><label>Stakeholder 4</label><input id="stakeholder4" /></div>
-            <div class="field"><label>Stakeholder 5</label><input id="stakeholder5" /></div>
-            <div class="field"><label>Stakeholder 6</label><input id="stakeholder6" /></div>
-            <div class="field"><label>Stakeholder 7</label><input id="stakeholder7" /></div>
-            <div class="field"><label>Stakeholder 8</label><input id="stakeholder8" /></div>
-            <div class="field"><label>Stakeholder 9</label><input id="stakeholder9" /></div>
-            <div class="field"><label>Stakeholder 10</label><input id="stakeholder10" /></div>
-          </div>
+        <div class="field">
+          <label>Stakeholder groups (up to 10)</label>
+          <textarea id="stakeholderGroups" rows="4"
+            placeholder="E.g. grain growers, agronomists, processors, input suppliers, policy-makers, environment agencies, etc."></textarea>
         </div>
       </div>
 
       <div class="toolbar">
-        <button id="saveProject" class="ghost">Save as JSON</button>
-        <button id="loadProject" class="ghost">Load JSON</button>
+        <button id="saveProject" class="ghost">Save project as JSON</button>
+        <button id="loadProject" class="ghost">Load project JSON</button>
         <input type="file" id="loadFile" accept=".json" hidden />
         <span class="spacer"></span>
-        <button data-tab-jump="time" class="primary">Next: Time</button>
+        <button data-tab-jump="time" class="primary">Next: Time & discounting</button>
       </div>
     </div>
   </section>
@@ -248,56 +231,54 @@
   <!-- TIME -->
   <section id="tab-time" class="tab-panel">
     <div class="panel">
-      <h2>Time horizon and discounting</h2>
+      <h2>Time & discounting</h2>
       <div class="grid-3">
         <div class="field">
-          <label>Start year for analysis (Year 0)</label>
+          <label>Analysis start year (Year 0 in CBA)</label>
           <input id="startYear" type="number" />
         </div>
         <div class="field">
-          <label>Analysis length (years, excluding Year 0)</label>
+          <label>Project start year</label>
+          <input id="projectStartYear" type="number" />
+        </div>
+        <div class="field">
+          <label>Analysis horizon (years, excluding Year 0)</label>
           <input id="years" type="number" min="1" max="50" />
         </div>
         <div class="field">
-          <label>Project start year (for reference)</label>
-          <input id="timeProjectStartYear" type="number" />
-        </div>
-      </div>
-
-      <h3>Discount rates</h3>
-      <div class="grid-3">
-        <div class="field">
-          <label>Discount mode</label>
-          <select id="discMode">
-            <option value="constant">Constant rate over time</option>
-            <option value="schedule">Time-varying schedule</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Constant discount (default, %)</label>
+          <label>Discount (base, %)</label>
           <input id="discBase" type="number" step="0.1" />
         </div>
         <div class="field">
-          <label>Constant discount (low / high, %)</label>
-          <div class="row-2">
-            <input id="discLow" type="number" step="0.1" placeholder="Low" />
-            <input id="discHigh" type="number" step="0.1" placeholder="High" />
-          </div>
+          <label>Discount (low, %)</label>
+          <input id="discLow" type="number" step="0.1" />
+        </div>
+        <div class="field">
+          <label>Discount (high, %)</label>
+          <input id="discHigh" type="number" step="0.1" />
+        </div>
+        <div class="field">
+          <label>MIRR finance rate (%)</label>
+          <input id="mirrFinance" type="number" step="0.1" />
+        </div>
+        <div class="field">
+          <label>MIRR reinvest rate (%)</label>
+          <input id="mirrReinvest" type="number" step="0.1" />
         </div>
       </div>
 
-      <div class="callout">
-        <div class="title">Time-varying discount schedule (for sensitivity)</div>
+      <div class="explain">
+        <h3>Discount rate scenarios (for sensitivity analysis)</h3>
         <p class="small muted">
-          You can specify ATO- or treasury-style time-varying discount rates by period and scenario. These values are stored
-          for documentation and sensitivity analysis. When discount mode is set to “Time-varying schedule”, the “Default”
-          column is the main scenario; “Low” and “High” can be used for scenario analysis.
+          Use these schedules to document low, default, and high discount rate assumptions by period. The
+          constant discount rate fields above are used for core calculations; the schedule supports structured
+          sensitivity analysis and reporting.
         </p>
-        <div class="disc-schedule-wrapper">
-          <table class="disc-schedule">
+        <div class="preview discount-schedule">
+          <table>
             <thead>
               <tr>
-                <th>Period (calendar years)</th>
+                <th>Period</th>
                 <th>Low (%)</th>
                 <th>Default (%)</th>
                 <th>High (%)</th>
@@ -306,33 +287,33 @@
             <tbody>
               <tr>
                 <td>2025–2034</td>
-                <td><input id="disc_low_p1" type="number" step="0.1" /></td>
-                <td><input id="disc_def_p1" type="number" step="0.1" /></td>
-                <td><input id="disc_high_p1" type="number" step="0.1" /></td>
+                <td><input type="number" step="0.1" data-disc-period="0" data-scenario="low" /></td>
+                <td><input type="number" step="0.1" data-disc-period="0" data-scenario="base" /></td>
+                <td><input type="number" step="0.1" data-disc-period="0" data-scenario="high" /></td>
               </tr>
               <tr>
                 <td>2035–2044</td>
-                <td><input id="disc_low_p2" type="number" step="0.1" /></td>
-                <td><input id="disc_def_p2" type="number" step="0.1" /></td>
-                <td><input id="disc_high_p2" type="number" step="0.1" /></td>
+                <td><input type="number" step="0.1" data-disc-period="1" data-scenario="low" /></td>
+                <td><input type="number" step="0.1" data-disc-period="1" data-scenario="base" /></td>
+                <td><input type="number" step="0.1" data-disc-period="1" data-scenario="high" /></td>
               </tr>
               <tr>
                 <td>2045–2054</td>
-                <td><input id="disc_low_p3" type="number" step="0.1" /></td>
-                <td><input id="disc_def_p3" type="number" step="0.1" /></td>
-                <td><input id="disc_high_p3" type="number" step="0.1" /></td>
+                <td><input type="number" step="0.1" data-disc-period="2" data-scenario="low" /></td>
+                <td><input type="number" step="0.1" data-disc-period="2" data-scenario="base" /></td>
+                <td><input type="number" step="0.1" data-disc-period="2" data-scenario="high" /></td>
               </tr>
               <tr>
                 <td>2055–2064</td>
-                <td><input id="disc_low_p4" type="number" step="0.1" /></td>
-                <td><input id="disc_def_p4" type="number" step="0.1" /></td>
-                <td><input id="disc_high_p4" type="number" step="0.1" /></td>
+                <td><input type="number" step="0.1" data-disc-period="3" data-scenario="low" /></td>
+                <td><input type="number" step="0.1" data-disc-period="3" data-scenario="base" /></td>
+                <td><input type="number" step="0.1" data-disc-period="3" data-scenario="high" /></td>
               </tr>
               <tr>
                 <td>2065–2074</td>
-                <td><input id="disc_low_p5" type="number" step="0.1" /></td>
-                <td><input id="disc_def_p5" type="number" step="0.1" /></td>
-                <td><input id="disc_high_p5" type="number" step="0.1" /></td>
+                <td><input type="number" step="0.1" data-disc-period="4" data-scenario="low" /></td>
+                <td><input type="number" step="0.1" data-disc-period="4" data-scenario="base" /></td>
+                <td><input type="number" step="0.1" data-disc-period="4" data-scenario="high" /></td>
               </tr>
             </tbody>
           </table>
@@ -359,20 +340,8 @@
         <div class="field"><label>Financial</label><input id="rFin" type="number" step="0.01" /></div>
         <div class="field"><label>Managerial</label><input id="rMan" type="number" step="0.01" /></div>
       </div>
-      <button id="calcCombinedRisk" class="ghost">Combine factors →</button>
+      <button id="calcCombinedRisk" class="ghost">Combine risk factors →</button>
       <span id="combinedRiskOut" class="muted"></span>
-
-      <h3>MIRR assumptions</h3>
-      <div class="grid-3">
-        <div class="field">
-          <label>MIRR finance rate (%)</label>
-          <input id="mirrFinance" type="number" step="0.1" />
-        </div>
-        <div class="field">
-          <label>MIRR reinvest rate (%)</label>
-          <input id="mirrReinvest" type="number" step="0.1" />
-        </div>
-      </div>
 
       <div class="toolbar">
         <button data-tab-jump="outputs" class="primary">Next: Outputs</button>
@@ -383,31 +352,35 @@
   <!-- OUTPUTS -->
   <section id="tab-outputs" class="tab-panel">
     <div class="panel">
-      <h2>Direct outputs and system assumptions</h2>
+      <h2>Valued outputs ($/unit)</h2>
 
-      <div class="grid-2">
-        <div class="field">
-          <label>Cropping system</label>
-          <select id="cropSystemType">
-            <option value="single">Single-crop system</option>
-            <option value="mixed">Mixed-crop system</option>
-          </select>
+      <div class="explain">
+        <h3>Direct outputs and system type</h3>
+        <p>
+          Define direct market outputs (e.g. grain yield, biomass, quality) and link them to treatments.
+          The CBA multiplies per-hectare output changes by unit values, areas, adoption, and risk.
+        </p>
+        <div class="grid-2">
+          <div class="field">
+            <label>Production system</label>
+            <select id="systemType">
+              <option value="single">Single-crop system</option>
+              <option value="mixed">Mixed-crop / multi-output system</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Key assumptions (outputs)</label>
+            <textarea id="outputAssumptions" rows="2"
+              placeholder="E.g. baseline yield levels, quality discounts, output price assumptions, market access."></textarea>
+          </div>
         </div>
-        <div class="field">
-          <label>Key assumptions (yields, prices, rotation)</label>
-          <textarea id="outputAssumptions" rows="2"></textarea>
-        </div>
-      </div>
-
-      <div class="callout">
-        <div class="title">Direct outputs</div>
         <p class="small muted">
-          Capture direct outputs such as yield (t/ha), biomass (t/ha), antlers/harvest, and sold output. For each output,
-          specify the unit, a unit value ($/unit), and the data source (for example, farm trials, ABARES, GRDC, input receipts).
+          Typical direct outputs: <b>Yield (t/ha)</b>, <b>Biomass (t/ha)</b>, <b>Antiers/harvest</b>,
+          <b>Sold output</b>, quality (e.g. protein), and moisture adjustments. Use the table below to
+          set unit values and data sources.
         </p>
       </div>
 
-      <h3>Valued outputs ($/unit)</h3>
       <div id="outputsList" class="stack"></div>
       <button id="addOutput" class="ghost">Add output</button>
 
@@ -420,11 +393,11 @@
   <!-- TREATMENTS -->
   <section id="tab-treatments" class="tab-panel">
     <div class="panel">
-      <h2>Treatments (practices and scenarios)</h2>
+      <h2>Treatments (practices)</h2>
       <p class="small muted">
-        Define a control treatment (baseline) and up to 64 alternative treatments. Link each treatment to outputs
-        via per-hectare changes (deltas). You can specify area, replication, cost breakdowns (capital, materials, services),
-        and an optional control flag for comparative analysis.
+        For each treatment, specify area, adoption, costs (capital, materials, services), and link output changes.
+        Mark one treatment as the <b>control group</b> for comparison. The tool supports up to 64 treatments and
+        multiple replications.
       </p>
       <div id="treatmentsList" class="stack"></div>
       <button id="addTreatment" class="ghost">Add treatment</button>
@@ -435,24 +408,35 @@
     </div>
   </section>
 
-  <!-- BENEFITS (INDIRECT) -->
+  <!-- BENEFITS -->
   <section id="tab-benefits" class="tab-panel">
     <div class="panel">
-      <h2>Indirect benefits and soil health</h2>
+      <h2>Benefits (beyond treatment × output effects)</h2>
 
       <div class="explain">
-        <h3>How the tool treats indirect benefits</h3>
-        <p>
-          Direct treatment benefits are derived from the combination of output deltas and unit values, scaled by area,
-          adoption, and risk adjustment. This tab captures additional indirect benefits such as improvements in soil
-          health, soil carbon, water retention, and reduced consequence of risky events.
-        </p>
+        <h3>How the tool calculates benefits</h3>
+        <ul>
+          <li><b>Treatment benefits</b> = Σ over treatments [ (Σ over outputs (Δ output × $/unit)) × area × adoption × (1 − risk) ].</li>
+          <li><b>Additional benefits</b> (this tab) add non-yield effects (e.g. cost savings, risk reduction, asset improvements). Each item creates a cashflow from start to end year, optionally linking to adoption and/or overall risk.</li>
+        </ul>
         <div class="note">
-          Example domains you can represent here:
-          chemical, physical, and biological soil properties; soil carbon; soil pH and nutrients by depth; soil
-          properties by treatment; cost savings; water retention; and reduction in risk of adverse events
-          (for example, yield loss, downgrades).
+          Categories supported:
+          <ol>
+            <li><b>C1</b> Benefit per person/household</li>
+            <li><b>C2</b> Benefit per user unit</li>
+            <li><b>C3</b> Benefit per abatement unit</li>
+            <li><b>C4</b> Aggregate per year ($/yr)</li>
+            <li><b>C5</b> Delay/reduction in cost</li>
+            <li><b>C6</b> Improved asset value (once-off)</li>
+            <li><b>C7</b> Reduced consequence of risky event</li>
+            <li><b>C8</b> Custom (annual or once-off)</li>
+          </ol>
         </div>
+        <p class="small muted">
+          Use the “Benefit type” field to classify soil health and other indirect benefits:
+          soil chemical, physical, biological properties; soil carbon; pH or nutrients by depth;
+          soil properties by treatment; cost savings; water retention; and risk reduction.
+        </p>
       </div>
 
       <div id="benefitsList" class="stack"></div>
@@ -468,23 +452,12 @@
   <!-- COSTS -->
   <section id="tab-costs" class="tab-panel">
     <div class="panel">
-      <h2>Cost module and depreciation</h2>
-
-      <div class="callout warn">
-        <div class="title">Production costs only</div>
-        <p class="small">
-          Include production costs relevant to the farming or soil management system (capital, labour, materials,
-          and services). Exclude unrelated soil amendment costs that are not part of the project or treatment being evaluated.
-        </p>
-      </div>
-
-      <h3>Cost items by category</h3>
+      <h2>Production costs & depreciation</h2>
       <p class="small muted">
-        Classify items as capital, labour, materials, services, or other production costs. Each category can contain
-        multiple items (practically up to 25 per category for ease of review). Capital items can also be assigned
-        depreciation settings (straight-line or declining balance) for accounting and reporting.
+        Capture production costs associated with the project and treatments. Exclude unrelated soil amendment costs
+        that are not part of the intervention being evaluated. Use separate categories for capital, labour, materials,
+        and services. Depreciation for capital items is summarised in the Report.
       </p>
-
       <div id="costsList" class="stack"></div>
       <button id="addCost" class="ghost">Add cost item</button>
 
@@ -497,26 +470,14 @@
   <!-- DATABASE -->
   <section id="tab-database" class="tab-panel">
     <div class="panel">
-      <h2>Database and data sources</h2>
+      <h2>Database/source tags</h2>
       <h3>Outputs</h3>
       <div id="dbOutputs" class="stack"></div>
       <h3>Treatments</h3>
       <div id="dbTreatments" class="stack"></div>
 
-      <div class="callout">
-        <div class="title">External data integration</div>
-        <p class="small muted">
-          Data can be sourced from farm trials, plant farm data, ABARES, GRDC, input receipts, and other repositories.
-          Use the <b>Load / Excel</b> tab to import structured datasets. The tool provides a basic validation step
-          (column checks, sample preview) before you commit imported data into the CBA model.
-        </p>
-        <div class="toolbar">
-          <button id="goToLoad" class="ghost" data-tab-jump="load">Load external data (Excel/CSV)</button>
-        </div>
-      </div>
-
       <div class="toolbar">
-        <button data-tab-jump="load" class="primary">Next: Load/Excel</button>
+        <button data-tab-jump="load" class="primary">Next: Load data</button>
       </div>
     </div>
   </section>
@@ -524,7 +485,7 @@
   <!-- LOAD -->
   <section id="tab-load" class="tab-panel">
     <div class="panel">
-      <h2>Load / Excel</h2>
+      <h2>Load data / Excel</h2>
       <div class="grid-2">
         <div class="field">
           <label>Excel/CSV file</label>
@@ -543,8 +504,8 @@
         <div class="field">
           <label>&nbsp;</label>
           <div class="toolbar">
-            <button id="parseExcel" class="ghost">Parse file</button>
-            <button id="importExcel" class="primary" disabled>Import to Tool</button>
+            <button id="parseExcel" class="ghost">Preview data</button>
+            <button id="importExcel" class="primary" disabled>Load data into tool</button>
           </div>
           <div id="loadStatus" class="muted"></div>
         </div>
@@ -554,8 +515,8 @@
       <div id="preview"></div>
 
       <div class="toolbar">
-        <button id="downloadTemplate" class="ghost">Download Excel Template</button>
-        <button id="downloadSample" class="ghost">Download Sample Dataset</button>
+        <button id="downloadTemplate" class="ghost">Download Excel template</button>
+        <button id="downloadSample" class="ghost">Download sample dataset</button>
       </div>
 
       <div class="callout">
@@ -564,11 +525,11 @@
         <ul>
           <li><b>Outputs</b>: Name, Unit, ValuePerUnit, Source</li>
           <li><b>Treatments</b>: Name, Area, Adoption, AnnualCostPerHa, CapitalCostY0, Constrained, Source, Delta:Yield, Delta:Protein, Delta:Moisture, Delta:Biomass …</li>
-          <li><b>OtherCosts</b>: Label, Type (Annual/Capital), Annual, StartYear, EndYear, Capital, Year, Constrained</li>
+          <li><b>OtherCosts</b>: Label, Type (Annual/Capital), Category (Capital/Labour/Materials/Services), Annual, StartYear, EndYear, Capital, Year, Constrained, DepMethod, DepLife, DepRate</li>
           <li><b>Time</b>: StartYear, Years, DiscLow, DiscBase, DiscHigh, MIRR_Finance, MIRR_Reinvest</li>
           <li><b>AdoptionRisk</b>: AdoptLow, AdoptBase, AdoptHigh, RiskLow, RiskBase, RiskHigh, Tech, NonCoop, Socio, Fin, Man</li>
-          <li><b>Project</b>: Name, Analysts, Organisation, ContactEmail, Summary, Goal, WithProject, WithoutProject, LastUpdated</li>
-          <li><b>Benefits</b>: Label, Category (C1..C8), Frequency (Annual/Once), StartYear, EndYear, Year, UnitValue, Quantity, Abatement, AnnualAmount, GrowthPct, LinkAdoption (Yes/No), LinkRisk (Yes/No), P0, P1, Consequence, Notes</li>
+          <li><b>Project</b>: Name, Lead, Analysts, Team, Organisation, ContactEmail, ContactPhone, Summary, Objectives, Activities, Stakeholders, Goal, WithProject, WithoutProject, LastUpdated</li>
+          <li><b>Benefits</b>: Label, Category (C1..C8), BenefitType, Frequency (Annual/Once), StartYear, EndYear, Year, UnitValue, Quantity, Abatement, AnnualAmount, GrowthPct, LinkAdoption (Yes/No), LinkRisk (Yes/No), P0, P1, Consequence, Notes</li>
         </ul>
       </div>
     </div>
@@ -577,9 +538,7 @@
   <!-- SIMULATION -->
   <section id="tab-distribution" class="tab-panel">
     <div class="panel">
-      <h2>Simulation and sensitivity</h2>
-
-      <h3>Monte Carlo simulation</h3>
+      <h2>Simulation (Monte Carlo)</h2>
       <div class="grid-4">
         <div class="field"><label>Runs (N)</label><input id="simN" type="number" value="1000" /></div>
         <div class="field">
@@ -592,16 +551,48 @@
         <div class="field"><label>BCR target</label><input id="targetBCR" type="number" step="0.1" /></div>
         <div class="field"><label>Seed (optional)</label><input id="randSeed" type="number" /></div>
       </div>
-      <p class="small muted">
-        The Monte Carlo module varies discount rates, adoption, overall risk, and (optionally) prices and costs using
-        ±5–25% multiplicative shocks to approximate uncertainty around key parameters.
-      </p>
-      <button id="runSim" data-action="run-sim" class="primary">Run Monte Carlo</button>
+
+      <h3>Sensitivity settings (± variation)</h3>
+      <div class="grid-4">
+        <div class="field">
+          <label>Variation band (± %)</label>
+          <select id="simVarPct">
+            <option value="5">5%</option>
+            <option value="10">10%</option>
+            <option value="15">15%</option>
+            <option value="20" selected>20%</option>
+            <option value="25">25%</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Vary output prices?</label>
+          <select id="simVaryOutputs">
+            <option value="true" selected>Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Vary treatment costs?</label>
+          <select id="simVaryTreatCosts">
+            <option value="true" selected>Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Vary other input costs?</label>
+          <select id="simVaryInputCosts">
+            <option value="true">Yes</option>
+            <option value="false" selected>No</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="runSim" data-action="run-sim" class="primary">Run simulation</button>
       <span id="simStatus" class="muted"></span>
 
-      <div class="grid-2" style="margin-top:10px">
+      <div class="grid-2">
         <div class="card">
-          <h3>NPV distribution</h3>
+          <h3>NPV</h3>
           <canvas id="histNpv" width="520" height="280"></canvas>
           <div class="stats">
             <div>Min: <span id="simNpvMin">—</span></div>
@@ -612,7 +603,7 @@
           </div>
         </div>
         <div class="card">
-          <h3>BCR distribution <small>(target: <span id="simBcrTargetLabel">2</span>)</small></h3>
+          <h3>BCR <small>(target: <span id="simBcrTargetLabel">2</span>)</small></h3>
           <canvas id="histBcr" width="520" height="280"></canvas>
           <div class="stats">
             <div>Min: <span id="simBcrMin">—</span></div>
@@ -624,45 +615,13 @@
           </div>
         </div>
       </div>
-
-      <h3>Structured sensitivity (±5–25%)</h3>
-      <p class="small muted">
-        Use this grid-based sensitivity analysis to generate scenarios in which output prices, treatment costs,
-        input costs, discount rates, adoption levels, and risk levels are shifted by ±5%, ±10%, ±15%, ±20%, and ±25%.
-        Results are summarised in a table that can be exported alongside the main report.
-      </p>
-      <div class="grid-3">
-        <div class="field">
-          <label>Include in sensitivity</label>
-          <div class="stack small">
-            <label><input type="checkbox" id="sensPrices" checked /> Output prices</label>
-            <label><input type="checkbox" id="sensTreatCosts" checked /> Treatment costs</label>
-            <label><input type="checkbox" id="sensInputCosts" checked /> Input costs (capital, labour, materials, services)</label>
-            <label><input type="checkbox" id="sensDiscounts" /> Discount rates</label>
-            <label><input type="checkbox" id="sensAdoption" /> Adoption levels</label>
-            <label><input type="checkbox" id="sensRisk" /> Overall risk</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>Variation levels (%)</label>
-          <div class="muted small">
-            The tool uses ±5, ±10, ±15, ±20, and ±25 per cent shocks when building sensitivity scenarios.
-          </div>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button id="runSensitivity" class="ghost">Run structured sensitivity grid</button>
-        </div>
-      </div>
-
-      <div id="sensitivityTable" class="stack" style="margin-top:10px"></div>
     </div>
   </section>
 
   <!-- REPORT -->
   <section id="tab-report" class="tab-panel">
     <div class="panel">
-      <h2>Report and projections</h2>
+      <h2>Report</h2>
       <div class="grid-4 kpis">
         <div class="metric"><label>PV Benefits</label><div id="pvBenefits" class="value">—</div></div>
         <div class="metric"><label>PV Costs</label><div id="pvCosts" class="value">—</div></div>
@@ -676,21 +635,61 @@
         <div class="metric"><label>Gross Profit Margin</label><div id="profitMargin" class="value">—</div></div>
       </div>
 
-      <h3>Time-based projection summary (control vs with-project)</h3>
-      <p class="small muted">
-        The table below summarises present values of benefits and costs, and derived indicators, for selected time
-        horizons (from project start). The control group is defined as the “without-project” scenario with zero
-        incremental cashflows; with-project values reflect the combined effect of all treatments, benefits, and costs.
-      </p>
-      <div id="projectionSummary" class="stack"></div>
+      <h3>Control and treatment indicators</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Control group (treatment marked as control)</h4>
+          <div class="grid-4 kpis kpis-compact">
+            <div class="metric"><label>PV Benefits</label><div id="pvBenefitsControl" class="value">—</div></div>
+            <div class="metric"><label>PV Costs</label><div id="pvCostsControl" class="value">—</div></div>
+            <div class="metric"><label>NPV</label><div id="npvControl" class="value">—</div></div>
+            <div class="metric"><label>BCR</label><div id="bcrControl" class="value">—</div></div>
+            <div class="metric"><label>IRR</label><div id="irrControl" class="value">—</div></div>
+            <div class="metric"><label>ROI</label><div id="roiControl" class="value">—</div></div>
+            <div class="metric"><label>Payback (yrs)</label><div id="paybackControl" class="value">—</div></div>
+            <div class="metric"><label>Gross Margin</label><div id="gmControl" class="value">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Treatment group (all non-control treatments)</h4>
+          <div class="grid-4 kpis kpis-compact">
+            <div class="metric"><label>PV Benefits</label><div id="pvBenefitsTreat" class="value">—</div></div>
+            <div class="metric"><label>PV Costs</label><div id="pvCostsTreat" class="value">—</div></div>
+            <div class="metric"><label>NPV</label><div id="npvTreat" class="value">—</div></div>
+            <div class="metric"><label>BCR</label><div id="bcrTreat" class="value">—</div></div>
+            <div class="metric"><label>IRR</label><div id="irrTreat" class="value">—</div></div>
+            <div class="metric"><label>ROI</label><div id="roiTreat" class="value">—</div></div>
+            <div class="metric"><label>Payback (yrs)</label><div id="paybackTreat" class="value">—</div></div>
+            <div class="metric"><label>Gross Margin</label><div id="gmTreat" class="value">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Time-based projections (base discount)</h3>
+      <div class="preview">
+        <table id="timeProjectionTable">
+          <thead>
+            <tr>
+              <th>Horizon (years)</th>
+              <th>PV Benefits</th>
+              <th>PV Costs</th>
+              <th>NPV</th>
+              <th>BCR</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>NPV over time</h4>
+        <canvas id="timeNpvChart" width="720" height="260"></canvas>
+      </div>
 
       <h3>Treatment summary and rankings</h3>
-      <p class="small muted">
-        Treatment-level results are based on per-hectare deltas and costs, scaled by area, adoption, and risk. They can
-        be used to rank treatments by NPV and BCR relative to their own costs. One treatment can be flagged as the
-        control group to represent current practice.
-      </p>
       <div id="treatmentSummary" class="stack"></div>
+
+      <h3>Depreciation summary (capital costs)</h3>
+      <div id="depSummary" class="stack"></div>
 
       <div class="toolbar">
         <button id="recalc" class="ghost">Recalculate</button>
@@ -708,18 +707,18 @@
   <!-- HELP -->
   <section id="tab-help" class="tab-panel">
     <div class="panel">
-      <h2>How to use the tool </h2>
+      <h2>How to use the tool (plain language)</h2>
       <ol class="help-steps">
-        <li><b>Project</b>: describe the project, objectives, activities, stakeholders, and contacts.</li>
-        <li><b>Time</b>: set the analysis horizon; choose constant or time-varying discount rates; enter adoption and risk ranges.</li>
-        <li><b>Outputs</b>: define valued outputs (for example, yield in t/ha, biomass, antlers/harvest, sold output) and state assumptions.</li>
-        <li><b>Treatments</b>: add control and alternative practices, areas (ha), replications, adoption, cost breakdowns, and output deltas.</li>
-        <li><b>Benefits</b>: include indirect benefits such as soil health improvements, soil carbon, cost savings, and reduced risk.</li>
-        <li><b>Costs</b>: add production costs (capital, labour, materials, services), and record depreciation settings where relevant.</li>
-        <li><b>Database</b>: tag sources (farm trials, plant farm, ABARES, GRDC, input receipts) to support transparency and audit.</li>
-        <li><b>Load</b>: import from Excel/CSV using the provided template, review the validation output, and commit data into the tool.</li>
-        <li><b>Simulation</b>: run Monte Carlo and structured sensitivity (±5–25%) to explore uncertainty and risk.</li>
-        <li><b>Report</b>: view consolidated indicators, time-based projections, and treatment rankings, and export as CSV/PDF for further use, including in external tools such as Microsoft Copilot or agriculture-specific reporting platforms.</li>
+        <li><b>Project</b>: describe the project, objectives, team, activities, and stakeholder groups.</li>
+        <li><b>Time</b>: set analysis start year, project start year, analysis horizon, and discount rates. Record discount schedules for sensitivity analysis and document adoption and risk ranges.</li>
+        <li><b>Outputs</b>: define the outputs you value (e.g. Yield $/t, Biomass $/t, Antiers/harvest, Sold output) and assumptions.</li>
+        <li><b>Treatments</b>: add practices, areas (ha), adoption, costs (capital, materials, services), mark a control, and enter “delta” impacts on each output.</li>
+        <li><b>Benefits</b>: add soil health and other indirect benefits (soil chemical, physical, biological, carbon, pH, nutrients, cost savings, water retention, risk reduction) using the benefit categories.</li>
+        <li><b>Costs</b>: add production costs (capital, labour, materials, services) and depreciation methods for capital items; unrelated soil amendments should be excluded.</li>
+        <li><b>Database</b>: tag data sources for transparency (Farm trials, Plant farm, ABARES, GRDC, receipts, etc.).</li>
+        <li><b>Load</b>: import from Excel/CSV using the template; review and validate data before loading.</li>
+        <li><b>Simulation</b>: run Monte Carlo to explore uncertainty in NPV and BCR, including ± percentage variation in prices and costs.</li>
+        <li><b>Report</b>: view indicators for the whole project and for control vs treatment groups, inspect time-based projections, and export as CSV or print-ready report. Optional integrations (e.g. Microsoft Copilot, agriculture reporting tools) can use exported files.</li>
       </ol>
       <p class="muted">Questions? Contact <a href="mailto:frank.agbola@newcastle.edu.au">frank.agbola@newcastle.edu.au</a>.</p>
     </div>
