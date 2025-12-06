@@ -215,8 +215,8 @@
         ? n.toLocaleString(undefined, { maximumFractionDigits: 0 })
         : n.toLocaleString(undefined, { maximumFractionDigits: 2 })
       : "n/a";
-  const money = n => (isFinite(n) ? "$" + fmt(n) : "n/a");
-  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a");
+  const money = n => (isFinite(n) ? "$" + fmt(n) : "n/a";
+  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a";
   const slug = s =>
     (s || "project")
       .toLowerCase()
@@ -525,26 +525,63 @@
     if (el) el.textContent = text;
   };
 
+  // Robust tab switcher that works with:
+  // - any element with [data-tab] as nav
+  // - panels using id="tab-<name>", id="<name>", or data-tab-panel="<name>"
   function switchTab(target) {
-    $$("#tabs button").forEach(b =>
-      b.classList.toggle("active", b.dataset.tab === target)
-    );
-    $$(".tab-panel").forEach(p =>
-      p.classList.toggle("show", p.id === "tab-" + target)
-    );
-    if (target === "distribution") drawHists();
-    if (target === "report") calcAndRender();
+    if (!target) return;
+
+    const navEls = $$("[data-tab]");
+    navEls.forEach(el => {
+      el.classList.toggle("active", el.dataset.tab === target);
+      el.setAttribute("aria-selected", el.dataset.tab === target ? "true" : "false");
+    });
+
+    const panels = $$(".tab-panel");
+    panels.forEach(p => {
+      const key = p.dataset.tabPanel || (p.id ? p.id.replace(/^tab-/, "") : "");
+      const match =
+        key === target ||
+        p.id === target ||
+        p.id === "tab-" + target;
+
+      const show = !!match;
+      p.classList.toggle("active", show);
+      p.classList.toggle("show", show);
+      p.hidden = !show;
+      p.setAttribute("aria-hidden", show ? "false" : "true");
+    });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function initTabs() {
+    // Click delegation for any element that declares a tab target
     document.addEventListener("click", e => {
-      const navBtn = e.target.closest("#tabs button[data-tab]");
-      const jumpBtn = e.target.closest("[data-tab-jump]");
-      const target = (navBtn && navBtn.dataset.tab) || (jumpBtn && jumpBtn.dataset.tabJump);
+      const el = e.target.closest("[data-tab],[data-tab-target],[data-tab-jump]");
+      if (!el) return;
+      const target =
+        el.dataset.tab ||
+        el.dataset.tabTarget ||
+        el.dataset.tabJump;
       if (!target) return;
+      e.preventDefault();
       switchTab(target);
     });
+
+    // Initial tab selection: prefer nav element marked active, otherwise first nav, otherwise first panel
+    const activeNav = document.querySelector("[data-tab].active") || document.querySelector("[data-tab]");
+    if (activeNav) {
+      switchTab(activeNav.dataset.tab);
+    } else {
+      const firstPanel = document.querySelector(".tab-panel");
+      if (firstPanel) {
+        const key =
+          firstPanel.dataset.tabPanel ||
+          (firstPanel.id ? firstPanel.id.replace(/^tab-/, "") : "");
+        if (key) switchTab(key);
+      }
+    }
   }
 
   function initActions() {
@@ -655,7 +692,7 @@
           id: uid(),
           label: "New cost",
           type: "annual",
-          category: "Labour",
+          category: "Services",
           annual: 0,
           startYear: model.time.startYear,
           endYear: model.time.startYear,
