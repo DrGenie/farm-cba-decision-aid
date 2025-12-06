@@ -1,116 +1,100 @@
-// Farming CBA Tool — Newcastle Business School (extended version with project module, soil benefits, and simulation)
+// Farming CBA Tool — Newcastle Business School (enhanced project, time, outputs, treatments, costs, simulation, report)
 (() => {
-  // ---------- MODEL ----------
-  const thisYear = new Date().getFullYear();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  // ---------- CONSTANTS ----------
+  const DEFAULT_DISCOUNT_SCHEDULE = [
+    { label: "2025–2034", from: 2025, to: 2034, low: 2, base: 4, high: 6 },
+    { label: "2035–2044", from: 2035, to: 2044, low: 4, base: 7, high: 10 },
+    { label: "2045–2054", from: 2045, to: 2054, low: 4, base: 7, high: 10 },
+    { label: "2055–2064", from: 2055, to: 2064, low: 3, base: 6, high: 9 },
+    { label: "2065–2074", from: 2065, to: 2074, low: 2, base: 5, high: 8 }
+  ];
 
+  // ---------- MODEL ----------
   const model = {
     project: {
-      name: "Nitrogen Optimisation Trial",
-      lead: "Project lead name",
-      team: "Farm Econ Team",
+      name: "Nitrogen Optimization Trial",
+      lead: "Project Lead",
       analysts: "Farm Econ Team",
+      team: "",
       organisation: "Newcastle Business School, The University of Newcastle",
       contactEmail: "frank.agbola@newcastle.edu.au",
       contactPhone: "",
-      projectStartYear: thisYear,
       summary:
-        "Test fertiliser and soil strategies to raise wheat yield and protein across 500 ha over 5 years.",
-      lastUpdated: todayIso,
-      objectives: "Increase profitability and soil health while managing risk.",
+        "Test fertilizer strategies to raise wheat yield and protein across 500 ha over 5 years.",
+      objectives: "",
+      activities: "",
+      stakeholders: "",
+      lastUpdated: new Date().toISOString().slice(0, 10),
       goal: "Increase yield by 10% and protein by 0.5 p.p. on 500 ha within 3 years.",
-      withProject: "Adopt optimised nitrogen timing and rates; improved soil management on 500 ha.",
+      withProject: "Adopt optimized nitrogen timing and rates; improved management on 500 ha.",
       withoutProject:
-        "Business-as-usual fertilisation; yield/protein unchanged; rising costs.",
-      activities: [
-        "On-farm trials at multiple sites",
-        "Soil sampling and lab analysis",
-        "Farmer engagement workshops"
-      ],
-      stakeholders: [
-        "Grain growers",
-        "Advisers and agronomists",
-        "Industry bodies"
-      ]
+        "Business-as-usual fertilization; yield/protein unchanged; rising costs."
     },
     time: {
-      startYear: thisYear,
+      startYear: new Date().getFullYear(),
+      projectStartYear: new Date().getFullYear(),
       years: 10,
-      projectStartYear: thisYear,
-      discMode: "constant", // "constant" or "schedule"
       discBase: 7,
       discLow: 4,
       discHigh: 10,
-      // Time-varying schedule in per cent
-      discSchedule: {
-        low:    { p1: 2, p2: 4, p3: 4, p4: 3, p5: 2 },
-        def:    { p1: 4, p2: 7, p3: 7, p4: 6, p5: 5 },
-        high:   { p1: 6, p2: 10, p3: 10, p4: 9, p5: 8 }
-      },
       mirrFinance: 6,
-      mirrReinvest: 4
+      mirrReinvest: 4,
+      discountSchedule: JSON.parse(JSON.stringify(DEFAULT_DISCOUNT_SCHEDULE))
     },
-    outputsConfig: {
-      systemType: "single", // "single" or "mixed"
+    outputsMeta: {
+      systemType: "single",
       assumptions: ""
     },
     outputs: [
       { id: uid(), name: "Yield", unit: "t/ha", value: 300, source: "Input Directly" },
-      { id: uid(), name: "Biomass", unit: "t/ha", value: 40, source: "Input Directly" },
-      { id: uid(), name: "Antlers/harvest", unit: "per head", value: 15, source: "Input Directly" },
-      { id: uid(), name: "Sold output", unit: "t", value: 320, source: "Input Directly" }
+      { id: uid(), name: "Protein", unit: "%-point", value: 12, source: "Input Directly" },
+      { id: uid(), name: "Moisture", unit: "%-point", value: -5, source: "Input Directly" },
+      { id: uid(), name: "Biomass", unit: "t/ha", value: 40, source: "Input Directly" }
     ],
     treatments: [
       {
         id: uid(),
-        name: "Control (current practice)",
+        name: "Optimized N (Rate+Timing)",
         area: 300,
+        adoption: 0.8,
+        deltas: {},
+        annualCost: 45,
+        materialsCost: 0,
+        servicesCost: 0,
+        capitalCost: 5000,
+        constrained: true,
+        source: "Farm Trials",
         replications: 1,
-        adoption: 1.0,
+        isControl: false,
+        notes: ""
+      },
+      {
+        id: uid(),
+        name: "Slow-Release N",
+        area: 200,
+        adoption: 0.7,
         deltas: {},
         annualCost: 25,
         materialsCost: 0,
         servicesCost: 0,
         capitalCost: 0,
         constrained: true,
-        source: "Farm Trials",
-        isControl: true,
-        useDepreciation: false,
-        deprMethod: "sl",
-        deprLife: 5,
-        deprRate: 20
-      },
-      {
-        id: uid(),
-        name: "Optimised N (rate + timing)",
-        area: 300,
+        source: "ABARES",
         replications: 1,
-        adoption: 0.8,
-        deltas: {},
-        annualCost: 45,
-        materialsCost: 10,
-        servicesCost: 5,
-        capitalCost: 5000,
-        constrained: true,
-        source: "Farm Trials",
         isControl: false,
-        useDepreciation: false,
-        deprMethod: "sl",
-        deprLife: 5,
-        deprRate: 20
+        notes: ""
       }
     ],
-    controlTreatmentId: null,
     benefits: [
       {
         id: uid(),
-        label: "Improved soil structure (physical)",
-        domain: "Soil health – physical",
+        label: "Reduced recurring costs (energy/water)",
         category: "C4",
+        theme: "Cost savings",
         frequency: "Annual",
-        startYear: thisYear,
-        endYear: thisYear + 4,
-        year: thisYear,
+        startYear: new Date().getFullYear(),
+        endYear: new Date().getFullYear() + 4,
+        year: new Date().getFullYear(),
         unitValue: 0,
         quantity: 0,
         abatement: 0,
@@ -121,17 +105,17 @@
         p0: 0,
         p1: 0,
         consequence: 0,
-        notes: "Project-wide OPEX saving due to better trafficability"
+        notes: "Project-wide OPEX saving"
       },
       {
         id: uid(),
-        label: "Reduced risk of grain quality downgrades",
-        domain: "Risk reduction",
+        label: "Reduced risk of quality downgrades",
         category: "C7",
+        theme: "Risk reduction",
         frequency: "Annual",
-        startYear: thisYear,
-        endYear: thisYear + 9,
-        year: thisYear,
+        startYear: new Date().getFullYear(),
+        endYear: new Date().getFullYear() + 9,
+        year: new Date().getFullYear(),
         unitValue: 0,
         quantity: 0,
         abatement: 0,
@@ -146,13 +130,13 @@
       },
       {
         id: uid(),
-        label: "Soil carbon asset uplift",
-        domain: "Soil carbon",
+        label: "Soil asset value uplift (carbon/structure)",
         category: "C6",
+        theme: "Soil carbon",
         frequency: "Once",
-        startYear: thisYear,
-        endYear: thisYear,
-        year: thisYear + 5,
+        startYear: new Date().getFullYear(),
+        endYear: new Date().getFullYear(),
+        year: new Date().getFullYear() + 5,
         unitValue: 0,
         quantity: 0,
         abatement: 0,
@@ -169,19 +153,18 @@
     otherCosts: [
       {
         id: uid(),
-        label: "Project management & M&E",
+        label: "Project Mgmt & M&E",
         type: "annual",
-        costCategory: "labour",
+        category: "Services",
         annual: 20000,
-        startYear: thisYear,
-        endYear: thisYear + 4,
+        startYear: new Date().getFullYear(),
+        endYear: new Date().getFullYear() + 4,
         capital: 0,
-        year: thisYear,
+        year: new Date().getFullYear(),
         constrained: true,
-        useDepreciation: false,
-        deprMethod: "sl",
-        deprLife: 5,
-        deprRate: 20
+        depMethod: "none",
+        depLife: 5,
+        depRate: 30
       }
     ],
     adoption: { base: 0.9, low: 0.6, high: 1.0 },
@@ -202,7 +185,10 @@
       seed: null,
       results: { npv: [], bcr: [] },
       details: [],
-      sensitivity: []
+      variationPct: 20,
+      varyOutputs: true,
+      varyTreatCosts: true,
+      varyInputCosts: false
     }
   };
 
@@ -215,134 +201,73 @@
   }
   initTreatmentDeltas();
 
-  if (!model.controlTreatmentId && model.treatments.length) {
-    const ctrl = model.treatments.find(t => t.isControl) || model.treatments[0];
-    model.controlTreatmentId = ctrl.id;
-  }
-
   // ---------- UTIL ----------
   function uid() { return Math.random().toString(36).slice(2, 10); }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const fmt = n =>
-    (isFinite(n)
-      ? (Math.abs(n) >= 1000
-          ? n.toLocaleString(undefined, { maximumFractionDigits: 0 })
-          : n.toLocaleString(undefined, { maximumFractionDigits: 2 }))
-      : "—");
+  const fmt = n => (isFinite(n) ? (Math.abs(n) >= 1000 ? n.toLocaleString(undefined, { maximumFractionDigits: 0 }) : n.toLocaleString(undefined, { maximumFractionDigits: 2 })) : "—");
   const money = n => (isFinite(n) ? "$" + fmt(n) : "—");
   const percent = n => (isFinite(n) ? fmt(n) + "%" : "—");
   const slug = s => (s || "project").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
-  const annuityFactor = (N, rPct) => {
-    const r = rPct / 100;
-    return r === 0 ? N : (1 - Math.pow(1 + r, -N)) / r;
-  };
+  const annuityFactor = (N, rPct) => { const r = rPct / 100; return r === 0 ? N : (1 - Math.pow(1 + r, -N)) / r; };
   const esc = s => (s ?? "").toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  function discountRateForYear(absYear, scenario) {
-    const sched = model.time.discSchedule || {};
-    const table = scenario === "low" ? sched.low : scenario === "high" ? sched.high : sched.def;
-    if (!table) return model.time.discBase;
-    const y = absYear;
-    if (y >= 2025 && y <= 2034) return table.p1;
-    if (y >= 2035 && y <= 2044) return table.p2;
-    if (y >= 2045 && y <= 2054) return table.p3;
-    if (y >= 2055 && y <= 2064) return table.p4;
-    if (y >= 2065 && y <= 2074) return table.p5;
-    return model.time.discBase;
-  }
-
-  function presentValue(series, ratePct, scenarioLabel) {
-    let pv = 0;
-    if (model.time.discMode === "schedule" && scenarioLabel) {
-      const base = model.time.startYear;
-      for (let t = 0; t < series.length; t++) {
-        const absYear = base + t;
-        const rPct = t === 0 ? 0 : discountRateForYear(absYear, scenarioLabel);
-        const r = rPct / 100;
-        pv += series[t] / Math.pow(1 + r, t);
-      }
-      return pv;
-    }
-    const r = ratePct / 100;
-    for (let t = 0; t < series.length; t++) {
-      pv += series[t] / Math.pow(1 + r, t);
-    }
-    return pv;
-  }
-
-  function partialPresentValue(series, ratePct, T, scenarioLabel) {
-    const slice = series.slice(0, T + 1);
-    return presentValue(slice, ratePct, scenarioLabel);
-  }
+  const horizons = [5, 10, 15, 20, 25];
 
   function saveWorkbook(filename, wb) {
-    try {
-      if (window.XLSX && typeof XLSX.writeFile === "function") {
-        XLSX.writeFile(wb, filename, { compression: true });
-        return;
-      }
-    } catch(_) {}
+    try { if (window.XLSX && typeof XLSX.writeFile === "function") { XLSX.writeFile(wb, filename, { compression: true }); return; } }
+    catch(_) {}
     try {
       const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array", compression: true });
       const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
       document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},300);
-    } catch (err) {
-      alert("Download failed. Ensure SheetJS script is loaded.\n\n"+(err?.message||err));
-    }
+    } catch (err) { alert("Download failed. Ensure SheetJS script is loaded.\n\n"+(err?.message||err)); }
   }
 
   // ---------- CASHFLOWS ----------
-  function buildCashflows({ forRate, adoptMul, risk, sim }) {
+  function buildCashflows({ forRate = model.time.discBase, adoptMul = model.adoption.base, risk = model.risk.base }) {
     const N = model.time.years;
     const baseYear = model.time.startYear;
-
-    const priceFactor = sim?.priceFactor ?? 1;
-    const treatCostFactor = sim?.treatCostFactor ?? 1;
-    const inputCostFactor = sim?.inputCostFactor ?? 1;
 
     const benefitByYear = new Array(N + 1).fill(0);
     const costByYear = new Array(N + 1).fill(0);
     const constrainedCostByYear = new Array(N + 1).fill(0);
 
     // Treatments × Outputs
-    let annualBenefit = 0;
-    let treatAnnualCostForGM = 0;
+    let annualBenefit = 0, treatAnnualCost = 0, treatConstrAnnualCost = 0;
+    let treatCapitalY0 = 0, treatConstrCapitalY0 = 0;
 
     model.treatments.forEach(t => {
       const adopt = clamp(t.adoption * adoptMul, 0, 1);
-      const rep = t.replications || 1;
-      const area = (Number(t.area) || 0) * rep;
-
       let valuePerHa = 0;
       model.outputs.forEach(o => {
         const delta = Number(t.deltas[o.id]) || 0;
-        const v = (Number(o.value) || 0) * priceFactor;
+        const v = Number(o.value) || 0;
         valuePerHa += delta * v;
       });
+      const area = Number(t.area) || 0;
       const benefit = valuePerHa * area * (1 - clamp(risk, 0, 1)) * adopt;
 
-      const perHaCost =
-        (Number(t.annualCost) || 0) +
-        (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0);
-      const opCost = perHaCost * area * treatCostFactor;
-      const cap = (Number(t.capitalCost) || 0) * inputCostFactor;
+      const annualCostPerHa = ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0)) || (Number(t.annualCost) || 0);
+      const opCost = annualCostPerHa * area;
+      const cap = Number(t.capitalCost) || 0;
 
       annualBenefit += benefit;
-      treatAnnualCostForGM += opCost;
+      treatAnnualCost += opCost;
+      treatCapitalY0 += cap;
 
-      for (let year = 1; year <= N; year++) {
-        costByYear[year] += opCost;
-        if (t.constrained) constrainedCostByYear[year] += opCost;
-      }
-
-      if (cap > 0) {
-        // Capital costs are treated as up-front economic costs at Year 0.
-        costByYear[0] += cap;
-        if (t.constrained) constrainedCostByYear[0] += cap;
+      if (t.constrained) {
+        treatConstrAnnualCost += opCost;
+        treatConstrCapitalY0 += cap;
       }
     });
+
+    costByYear[0] += treatCapitalY0;
+    constrainedCostByYear[0] += treatConstrCapitalY0;
+    for (let t = 1; t <= N; t++) {
+      benefitByYear[t] += annualBenefit;
+      costByYear[t] += treatAnnualCost;
+      constrainedCostByYear[t] += treatConstrAnnualCost;
+    }
 
     // Other project costs
     const otherAnnualByYear = new Array(N + 1).fill(0);
@@ -351,7 +276,7 @@
 
     model.otherCosts.forEach(c => {
       if (c.type === "annual") {
-        const a = (Number(c.annual) || 0) * inputCostFactor;
+        const a = Number(c.annual) || 0;
         const sy = Number(c.startYear) || baseYear;
         const ey = Number(c.endYear) || sy;
         for (let y = sy; y <= ey; y++) {
@@ -362,7 +287,7 @@
           }
         }
       } else if (c.type === "capital") {
-        const cap = (Number(c.capital) || 0) * inputCostFactor;
+        const cap = Number(c.capital) || 0;
         const cy = Number(c.year) || baseYear;
         const idx = cy - baseYear;
         if (idx === 0) {
@@ -387,7 +312,7 @@
     for (let i = 0; i < extra.length; i++) benefitByYear[i] += extra[i];
 
     const cf = new Array(N + 1).fill(0).map((_, i) => (benefitByYear[i] - costByYear[i]));
-    const annualGM = annualBenefit - treatAnnualCostForGM;
+    const annualGM = annualBenefit - treatAnnualCost;
     return { benefitByYear, costByYear, constrainedCostByYear, cf, annualGM };
   }
 
@@ -452,13 +377,18 @@
     return series;
   }
 
-  function computeAll(rate, adoptMul, risk, bcrMode, discountScenario, simOptions) {
-    const { benefitByYear, costByYear, constrainedCostByYear, cf, annualGM } =
-      buildCashflows({ forRate: rate, adoptMul, risk, sim: simOptions });
+  function presentValue(series, ratePct) {
+    let pv = 0;
+    for (let t = 0; t < series.length; t++) pv += series[t] / Math.pow(1 + ratePct / 100, t);
+    return pv;
+  }
 
-    const pvBenefits = presentValue(benefitByYear, rate, discountScenario || null);
-    const pvCosts = presentValue(costByYear, rate, discountScenario || null);
-    const pvCostsConstrained = presentValue(constrainedCostByYear, rate, discountScenario || null);
+  function computeAll(rate, adoptMul, risk, bcrMode) {
+    const { benefitByYear, costByYear, constrainedCostByYear, cf, annualGM } =
+      buildCashflows({ forRate: rate, adoptMul, risk });
+    const pvBenefits = presentValue(benefitByYear, rate);
+    const pvCosts = presentValue(costByYear, rate);
+    const pvCostsConstrained = presentValue(constrainedCostByYear, rate);
 
     const npv = pvBenefits - pvCosts;
     const denom = (bcrMode === "constrained") ? pvCostsConstrained : pvCosts;
@@ -470,12 +400,7 @@
     const profitMargin = benefitByYear[1] > 0 ? (annualGM / benefitByYear[1]) * 100 : NaN;
     const pb = payback(cf, rate);
 
-    return {
-      pvBenefits, pvCosts, pvCostsConstrained,
-      npv, bcr, irrVal, mirrVal, roi,
-      annualGM, profitMargin, paybackYears: pb,
-      benefitByYear, costByYear
-    };
+    return { pvBenefits, pvCosts, pvCostsConstrained, npv, bcr, irrVal, mirrVal, roi, annualGM, profitMargin, paybackYears: pb, cf, benefitByYear, costByYear };
   }
 
   function irr(cf) {
@@ -485,12 +410,7 @@
     let lo = -0.99, hi = 5.0;
     const npvAt = r => cf.reduce((acc, v, t) => acc + v / Math.pow(1 + r, t), 0);
     let nLo = npvAt(lo), nHi = npvAt(hi);
-    if (nLo * nHi > 0) {
-      for (let k = 0; k < 20 && nLo * nHi > 0; k++) {
-        hi *= 1.5; nHi = npvAt(hi);
-      }
-      if (nLo * nHi > 0) return NaN;
-    }
+    if (nLo * nHi > 0) { for (let k = 0; k < 20 && nLo * nHi > 0; k++) { hi *= 1.5; nHi = npvAt(hi); } if (nLo * nHi > 0) return NaN; }
     for (let i = 0; i < 80; i++) {
       const mid = (lo + hi) / 2; const nMid = npvAt(mid);
       if (Math.abs(nMid) < 1e-8) return mid * 100;
@@ -515,9 +435,8 @@
 
   function payback(cf, ratePct) {
     let cum = 0;
-    const r = ratePct / 100;
     for (let t = 0; t < cf.length; t++) {
-      cum += cf[t] / Math.pow(1 + r, t);
+      cum += cf[t] / Math.pow(1 + ratePct / 100, t);
       if (cum >= 0) return t;
     }
     return null;
@@ -527,7 +446,10 @@
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
   const num = sel => +(document.querySelector(sel)?.value || 0);
-  const setVal = (sel, text) => (document.querySelector(sel).textContent = text);
+  const setVal = (sel, text) => {
+    const el = document.querySelector(sel);
+    if (el) el.textContent = text;
+  };
 
   function switchTab(target){
     $$("#tabs button").forEach(b =>
@@ -559,247 +481,234 @@
       if (e.target.closest("#runSim, [data-action='run-sim']")) {
         e.preventDefault(); runSimulation();
       }
-      if (e.target.closest("#runSensitivity")) {
-        e.preventDefault(); runStructuredSensitivity();
-      }
     });
   }
 
   // ---------- BIND + RENDER FORMS ----------
   function setBasicsFieldsFromModel() {
-    $("#projectName").value = model.project.name || "";
-    $("#projectLead").value = model.project.lead || "";
-    $("#projectTeam").value = model.project.team || "";
-    $("#analystNames").value = model.project.analysts || "";
-    $("#projectSummary").value = model.project.summary || "";
-    $("#lastUpdated").value = model.project.lastUpdated || "";
-    $("#projectObjectives").value = model.project.objectives || "";
-    $("#projectGoal").value = model.project.goal || "";
-    $("#withProject").value = model.project.withProject || "";
-    $("#withoutProject").value = model.project.withoutProject || "";
-    $("#organisation").value = model.project.organisation || "";
-    $("#contactEmail").value = model.project.contactEmail || "";
-    $("#contactPhone").value = model.project.contactPhone || "";
-    $("#projectStartYear").value = model.project.projectStartYear || "";
-    $("#timeProjectStartYear").value = model.time.projectStartYear || "";
+    if ($("#projectName")) $("#projectName").value = model.project.name || "";
+    if ($("#projectLead")) $("#projectLead").value = model.project.lead || "";
+    if ($("#analystNames")) $("#analystNames").value = model.project.analysts || "";
+    if ($("#projectTeam")) $("#projectTeam").value = model.project.team || "";
+    if ($("#projectSummary")) $("#projectSummary").value = model.project.summary || "";
+    if ($("#projectObjectives")) $("#projectObjectives").value = model.project.objectives || "";
+    if ($("#projectActivities")) $("#projectActivities").value = model.project.activities || "";
+    if ($("#stakeholderGroups")) $("#stakeholderGroups").value = model.project.stakeholders || "";
+    if ($("#lastUpdated")) $("#lastUpdated").value = model.project.lastUpdated || "";
+    if ($("#projectGoal")) $("#projectGoal").value = model.project.goal || "";
+    if ($("#withProject")) $("#withProject").value = model.project.withProject || "";
+    if ($("#withoutProject")) $("#withoutProject").value = model.project.withoutProject || "";
+    if ($("#organisation")) $("#organisation").value = model.project.organisation || "";
+    if ($("#contactEmail")) $("#contactEmail").value = model.project.contactEmail || "";
+    if ($("#contactPhone")) $("#contactPhone").value = model.project.contactPhone || "";
 
-    const acts = model.project.activities || [];
-    for (let i = 1; i <= 10; i++) {
-      const el = $("#activity"+i);
-      if (el) el.value = acts[i-1] || "";
-    }
-    const stks = model.project.stakeholders || [];
-    for (let i = 1; i <= 10; i++) {
-      const el = $("#stakeholder"+i);
-      if (el) el.value = stks[i-1] || "";
-    }
+    if ($("#startYear")) $("#startYear").value = model.time.startYear;
+    if ($("#projectStartYear")) $("#projectStartYear").value = model.time.projectStartYear || model.time.startYear;
+    if ($("#years")) $("#years").value = model.time.years;
+    if ($("#discBase")) $("#discBase").value = model.time.discBase;
+    if ($("#discLow")) $("#discLow").value = model.time.discLow;
+    if ($("#discHigh")) $("#discHigh").value = model.time.discHigh;
+    if ($("#mirrFinance")) $("#mirrFinance").value = model.time.mirrFinance;
+    if ($("#mirrReinvest")) $("#mirrReinvest").value = model.time.mirrReinvest;
 
-    $("#startYear").value = model.time.startYear;
-    $("#years").value = model.time.years;
-    $("#discBase").value = model.time.discBase;
-    $("#discLow").value = model.time.discLow;
-    $("#discHigh").value = model.time.discHigh;
-    $("#discMode").value = model.time.discMode;
-    $("#mirrFinance").value = model.time.mirrFinance;
-    $("#mirrReinvest").value = model.time.mirrReinvest;
+    if ($("#adoptBase")) $("#adoptBase").value = model.adoption.base;
+    if ($("#adoptLow")) $("#adoptLow").value = model.adoption.low;
+    if ($("#adoptHigh")) $("#adoptHigh").value = model.adoption.high;
 
-    const sch = model.time.discSchedule || {};
-    const low = sch.low || {}, def = sch.def || {}, high = sch.high || {};
-    $("#disc_low_p1").value = low.p1 ?? 2;
-    $("#disc_low_p2").value = low.p2 ?? 4;
-    $("#disc_low_p3").value = low.p3 ?? 4;
-    $("#disc_low_p4").value = low.p4 ?? 3;
-    $("#disc_low_p5").value = low.p5 ?? 2;
-    $("#disc_def_p1").value = def.p1 ?? 4;
-    $("#disc_def_p2").value = def.p2 ?? 7;
-    $("#disc_def_p3").value = def.p3 ?? 7;
-    $("#disc_def_p4").value = def.p4 ?? 6;
-    $("#disc_def_p5").value = def.p5 ?? 5;
-    $("#disc_high_p1").value = high.p1 ?? 6;
-    $("#disc_high_p2").value = high.p2 ?? 10;
-    $("#disc_high_p3").value = high.p3 ?? 10;
-    $("#disc_high_p4").value = high.p4 ?? 9;
-    $("#disc_high_p5").value = high.p5 ?? 8;
+    if ($("#riskBase")) $("#riskBase").value = model.risk.base;
+    if ($("#riskLow")) $("#riskLow").value = model.risk.low;
+    if ($("#riskHigh")) $("#riskHigh").value = model.risk.high;
+    if ($("#rTech")) $("#rTech").value = model.risk.tech;
+    if ($("#rNonCoop")) $("#rNonCoop").value = model.risk.nonCoop;
+    if ($("#rSocio")) $("#rSocio").value = model.risk.socio;
+    if ($("#rFin")) $("#rFin").value = model.risk.fin;
+    if ($("#rMan")) $("#rMan").value = model.risk.man;
 
-    $("#adoptBase").value = model.adoption.base;
-    $("#adoptLow").value = model.adoption.low;
-    $("#adoptHigh").value = model.adoption.high;
+    if ($("#simN")) $("#simN").value = model.sim.n;
+    if ($("#targetBCR")) $("#targetBCR").value = model.sim.targetBCR;
+    if ($("#bcrMode")) $("#bcrMode").value = model.sim.bcrMode;
+    if ($("#simBcrTargetLabel")) $("#simBcrTargetLabel").textContent = model.sim.targetBCR;
 
-    $("#riskBase").value = model.risk.base;
-    $("#riskLow").value = model.risk.low;
-    $("#riskHigh").value = model.risk.high;
-    $("#rTech").value = model.risk.tech;
-    $("#rNonCoop").value = model.risk.nonCoop;
-    $("#rSocio").value = model.risk.socio;
-    $("#rFin").value = model.risk.fin;
-    $("#rMan").value = model.risk.man;
+    if ($("#simVarPct")) $("#simVarPct").value = String(model.sim.variationPct || 20);
+    if ($("#simVaryOutputs")) $("#simVaryOutputs").value = model.sim.varyOutputs ? "true" : "false";
+    if ($("#simVaryTreatCosts")) $("#simVaryTreatCosts").value = model.sim.varyTreatCosts ? "true" : "false";
+    if ($("#simVaryInputCosts")) $("#simVaryInputCosts").value = model.sim.varyInputCosts ? "true" : "false";
 
-    $("#simN").value = model.sim.n;
-    $("#targetBCR").value = model.sim.targetBCR;
-    $("#bcrMode").value = model.sim.bcrMode;
-    $("#simBcrTargetLabel").textContent = model.sim.targetBCR;
+    if ($("#systemType")) $("#systemType").value = model.outputsMeta.systemType || "single";
+    if ($("#outputAssumptions")) $("#outputAssumptions").value = model.outputsMeta.assumptions || "";
 
-    $("#cropSystemType").value = model.outputsConfig.systemType || "single";
-    $("#outputAssumptions").value = model.outputsConfig.assumptions || "";
+    const sched = model.time.discountSchedule || DEFAULT_DISCOUNT_SCHEDULE;
+    $$("input[data-disc-period]").forEach(inp => {
+      const idx = +inp.dataset.discPeriod;
+      const scenario = inp.dataset.scenario;
+      const row = sched[idx];
+      if (!row) return;
+      let v = "";
+      if (scenario === "low") v = row.low;
+      else if (scenario === "base") v = row.base;
+      else if (scenario === "high") v = row.high;
+      inp.value = v ?? "";
+    });
   }
 
   function bindBasics() {
     setBasicsFieldsFromModel();
 
-    $("#calcCombinedRisk").addEventListener("click", () => {
-      const r = 1 - (1 - num("#rTech")) * (1 - num("#rNonCoop")) * (1 - num("#rSocio")) * (1 - num("#rFin")) * (1 - num("#rMan"));
-      $("#combinedRiskOut").textContent = `Combined: ${(r * 100).toFixed(2)}%`;
-      $("#riskBase").value = r.toFixed(3);
-      model.risk.base = r;
-      calcAndRender();
-    });
+    if ($("#calcCombinedRisk")) {
+      $("#calcCombinedRisk").addEventListener("click", () => {
+        const r = 1 - (1 - num("#rTech")) * (1 - num("#rNonCoop")) * (1 - num("#rSocio")) * (1 - num("#rFin")) * (1 - num("#rMan"));
+        if ($("#combinedRiskOut")) $("#combinedRiskOut").textContent = `Combined: ${(r * 100).toFixed(2)}%`;
+        if ($("#riskBase")) $("#riskBase").value = r.toFixed(3);
+        model.risk.base = r;
+        calcAndRender();
+      });
+    }
 
-    $("#addCost").addEventListener("click", () => {
-      const c = {
-        id: uid(),
-        label: "New cost",
-        type: "annual",
-        costCategory: "other",
-        annual: 0,
-        startYear: model.time.startYear,
-        endYear: model.time.startYear,
-        capital: 0,
-        year: model.time.startYear,
-        constrained: true,
-        useDepreciation: false,
-        deprMethod: "sl",
-        deprLife: 5,
-        deprRate: 20
-      };
-      model.otherCosts.push(c);
-      renderCosts();
-      calcAndRender();
-    });
+    if ($("#addCost")) {
+      $("#addCost").addEventListener("click", () => {
+        const c = {
+          id: uid(),
+          label: "New Cost",
+          type: "annual",
+          category: "Labour",
+          annual: 0,
+          startYear: model.time.startYear,
+          endYear: model.time.startYear,
+          capital: 0,
+          year: model.time.startYear,
+          constrained: true,
+          depMethod: "none",
+          depLife: 5,
+          depRate: 30
+        };
+        model.otherCosts.push(c);
+        renderCosts();
+        calcAndRender();
+      });
+    }
 
     document.addEventListener("input", e => {
-      const id = e.target.id;
+      const t = e.target;
+      if (!t) return;
+
+      // Discount schedule inputs
+      if (t.dataset && t.dataset.discPeriod !== undefined) {
+        const idx = +t.dataset.discPeriod;
+        const scenario = t.dataset.scenario;
+        if (!model.time.discountSchedule) model.time.discountSchedule = JSON.parse(JSON.stringify(DEFAULT_DISCOUNT_SCHEDULE));
+        const row = model.time.discountSchedule[idx];
+        if (row && scenario) {
+          const val = +t.value;
+          if (scenario === "low") row.low = val;
+          else if (scenario === "base") row.base = val;
+          else if (scenario === "high") row.high = val;
+          calcAndRenderDebounced();
+        }
+        return;
+      }
+
+      const id = t.id;
       if (!id) return;
-
-      const actMatch = id.match(/^activity(\d+)$/);
-      if (actMatch) {
-        const idx = Number(actMatch[1]) - 1;
-        model.project.activities[idx] = e.target.value;
-        return;
-      }
-      const stkMatch = id.match(/^stakeholder(\d+)$/);
-      if (stkMatch) {
-        const idx = Number(stkMatch[1]) - 1;
-        model.project.stakeholders[idx] = e.target.value;
-        return;
-      }
-
       switch (id) {
-        case "projectName": model.project.name = e.target.value; break;
-        case "projectLead": model.project.lead = e.target.value; break;
-        case "projectTeam": model.project.team = e.target.value; break;
-        case "analystNames": model.project.analysts = e.target.value; break;
-        case "projectSummary": model.project.summary = e.target.value; break;
-        case "lastUpdated": model.project.lastUpdated = e.target.value; break;
-        case "projectObjectives": model.project.objectives = e.target.value; break;
-        case "projectGoal": model.project.goal = e.target.value; break;
-        case "withProject": model.project.withProject = e.target.value; break;
-        case "withoutProject": model.project.withoutProject = e.target.value; break;
-        case "organisation": model.project.organisation = e.target.value; break;
-        case "contactEmail": model.project.contactEmail = e.target.value; break;
-        case "contactPhone": model.project.contactPhone = e.target.value; break;
-        case "projectStartYear":
-          model.project.projectStartYear = +e.target.value;
-          model.time.projectStartYear = +e.target.value;
-          $("#timeProjectStartYear").value = e.target.value;
-          break;
-        case "timeProjectStartYear":
-          model.time.projectStartYear = +e.target.value;
-          model.project.projectStartYear = +e.target.value;
-          $("#projectStartYear").value = e.target.value;
-          break;
+        case "projectName": model.project.name = t.value; break;
+        case "projectLead": model.project.lead = t.value; break;
+        case "analystNames": model.project.analysts = t.value; break;
+        case "projectTeam": model.project.team = t.value; break;
+        case "projectSummary": model.project.summary = t.value; break;
+        case "projectObjectives": model.project.objectives = t.value; break;
+        case "projectActivities": model.project.activities = t.value; break;
+        case "stakeholderGroups": model.project.stakeholders = t.value; break;
+        case "lastUpdated": model.project.lastUpdated = t.value; break;
+        case "projectGoal": model.project.goal = t.value; break;
+        case "withProject": model.project.withProject = t.value; break;
+        case "withoutProject": model.project.withoutProject = t.value; break;
+        case "organisation": model.project.organisation = t.value; break;
+        case "contactEmail": model.project.contactEmail = t.value; break;
+        case "contactPhone": model.project.contactPhone = t.value; break;
 
-        case "startYear": model.time.startYear = +e.target.value; break;
-        case "years": model.time.years = +e.target.value; break;
-        case "discBase": model.time.discBase = +e.target.value; break;
-        case "discLow": model.time.discLow = +e.target.value; break;
-        case "discHigh": model.time.discHigh = +e.target.value; break;
-        case "discMode": model.time.discMode = e.target.value; break;
-        case "mirrFinance": model.time.mirrFinance = +e.target.value; break;
-        case "mirrReinvest": model.time.mirrReinvest = +e.target.value; break;
+        case "startYear": model.time.startYear = +t.value; break;
+        case "projectStartYear": model.time.projectStartYear = +t.value; break;
+        case "years": model.time.years = +t.value; break;
+        case "discBase": model.time.discBase = +t.value; break;
+        case "discLow": model.time.discLow = +t.value; break;
+        case "discHigh": model.time.discHigh = +t.value; break;
+        case "mirrFinance": model.time.mirrFinance = +t.value; break;
+        case "mirrReinvest": model.time.mirrReinvest = +t.value; break;
 
-        case "adoptBase": model.adoption.base = +e.target.value; break;
-        case "adoptLow": model.adoption.low = +e.target.value; break;
-        case "adoptHigh": model.adoption.high = +e.target.value; break;
+        case "adoptBase": model.adoption.base = +t.value; break;
+        case "adoptLow": model.adoption.low = +t.value; break;
+        case "adoptHigh": model.adoption.high = +t.value; break;
 
-        case "riskBase": model.risk.base = +e.target.value; break;
-        case "riskLow": model.risk.low = +e.target.value; break;
-        case "riskHigh": model.risk.high = +e.target.value; break;
-        case "rTech": model.risk.tech = +e.target.value; break;
-        case "rNonCoop": model.risk.nonCoop = +e.target.value; break;
-        case "rSocio": model.risk.socio = +e.target.value; break;
-        case "rFin": model.risk.fin = +e.target.value; break;
-        case "rMan": model.risk.man = +e.target.value; break;
+        case "riskBase": model.risk.base = +t.value; break;
+        case "riskLow": model.risk.low = +t.value; break;
+        case "riskHigh": model.risk.high = +t.value; break;
+        case "rTech": model.risk.tech = +t.value; break;
+        case "rNonCoop": model.risk.nonCoop = +t.value; break;
+        case "rSocio": model.risk.socio = +t.value; break;
+        case "rFin": model.risk.fin = +t.value; break;
+        case "rMan": model.risk.man = +t.value; break;
 
-        case "simN": model.sim.n = +e.target.value; break;
-        case "targetBCR": model.sim.targetBCR = +e.target.value; $("#simBcrTargetLabel").textContent = e.target.value; break;
-        case "bcrMode": model.sim.bcrMode = e.target.value; break;
-        case "randSeed": model.sim.seed = e.target.value ? +e.target.value : null; break;
+        case "simN": model.sim.n = +t.value; break;
+        case "targetBCR": model.sim.targetBCR = +t.value; if ($("#simBcrTargetLabel")) $("#simBcrTargetLabel").textContent = t.value; break;
+        case "bcrMode": model.sim.bcrMode = t.value; break;
+        case "randSeed": model.sim.seed = t.value ? +t.value : null; break;
 
-        case "cropSystemType": model.outputsConfig.systemType = e.target.value; break;
-        case "outputAssumptions": model.outputsConfig.assumptions = e.target.value; break;
+        case "simVarPct": model.sim.variationPct = +t.value || 20; break;
+        case "simVaryOutputs": model.sim.varyOutputs = t.value === "true"; break;
+        case "simVaryTreatCosts": model.sim.varyTreatCosts = t.value === "true"; break;
+        case "simVaryInputCosts": model.sim.varyInputCosts = t.value === "true"; break;
+
+        case "systemType": model.outputsMeta.systemType = t.value; break;
+        case "outputAssumptions": model.outputsMeta.assumptions = t.value; break;
       }
-
-      if (id.startsWith("disc_")) {
-        const parts = id.split("_"); // disc_low_p1
-        const which = parts[1]; // low/def/high
-        const p = parts[2]; // p1..p5
-        const val = +e.target.value;
-        if (!model.time.discSchedule) model.time.discSchedule = { low:{},def:{},high:{} };
-        if (which === "low") model.time.discSchedule.low[p] = val;
-        if (which === "def") model.time.discSchedule.def[p] = val;
-        if (which === "high") model.time.discSchedule.high[p] = val;
-      }
-
       calcAndRenderDebounced();
     });
 
-    $("#saveProject").addEventListener("click", () => {
-      const data = JSON.stringify(model, null, 2);
-      downloadFile(`cba_${(model.project.name || "project").replace(/\s+/g, "_")}.json`, data, "application/json");
-    });
-    $("#loadProject").addEventListener("click", () => $("#loadFile").click());
-    $("#loadFile").addEventListener("change", async e => {
-      const file = e.target.files?.[0]; if (!file) return;
-      const text = await file.text();
-      try {
-        const obj = JSON.parse(text);
-        Object.assign(model, obj);
-        initTreatmentDeltas();
-        renderAll();
-        setBasicsFieldsFromModel();
-        calcAndRender();
-      } catch {
-        alert("Invalid JSON file.");
-      } finally { e.target.value = ""; }
-    });
+    if ($("#saveProject")) {
+      $("#saveProject").addEventListener("click", () => {
+        const data = JSON.stringify(model, null, 2);
+        downloadFile(`cba_${(model.project.name || "project").replace(/\s+/g, "_")}.json`, data, "application/json");
+      });
+    }
+    if ($("#loadProject")) {
+      $("#loadProject").addEventListener("click", () => $("#loadFile")?.click());
+    }
+    if ($("#loadFile")) {
+      $("#loadFile").addEventListener("change", async e => {
+        const file = e.target.files?.[0]; if (!file) return;
+        const text = await file.text();
+        try {
+          const obj = JSON.parse(text);
+          Object.assign(model, obj);
+          if (!model.time.discountSchedule) model.time.discountSchedule = JSON.parse(JSON.stringify(DEFAULT_DISCOUNT_SCHEDULE));
+          initTreatmentDeltas();
+          renderAll();
+          setBasicsFieldsFromModel();
+          calcAndRender();
+        } catch {
+          alert("Invalid JSON file.");
+        } finally { e.target.value = ""; }
+      });
+    }
 
-    $("#exportCsv").addEventListener("click", exportAllCsv);
-    $("#exportCsvFoot").addEventListener("click", exportAllCsv);
-    $("#exportPdf").addEventListener("click", exportPdf);
-    $("#exportPdfFoot").addEventListener("click", exportPdf);
+    if ($("#exportCsv")) $("#exportCsv").addEventListener("click", exportAllCsv);
+    if ($("#exportCsvFoot")) $("#exportCsvFoot").addEventListener("click", exportAllCsv);
+    if ($("#exportPdf")) $("#exportPdf").addEventListener("click", exportPdf);
+    if ($("#exportPdfFoot")) $("#exportPdfFoot").addEventListener("click", exportPdf);
 
-    $("#parseExcel").addEventListener("click", handleParseExcel);
-    $("#importExcel").addEventListener("click", commitExcelToModel);
+    if ($("#parseExcel")) $("#parseExcel").addEventListener("click", handleParseExcel);
+    if ($("#importExcel")) $("#importExcel").addEventListener("click", commitExcelToModel);
 
-    $("#downloadTemplate").addEventListener("click", downloadExcelTemplate);
-    $("#downloadSample").addEventListener("click", downloadSampleDataset);
+    if ($("#downloadTemplate")) $("#downloadTemplate").addEventListener("click", downloadExcelTemplate);
+    if ($("#downloadSample")) $("#downloadSample").addEventListener("click", downloadSampleDataset);
 
-    $("#startBtn")?.addEventListener("click", () => switchTab("project"));
+    if ($("#startBtn")) $("#startBtn").addEventListener("click", () => switchTab("project"));
   }
 
   // ---------- RENDERERS ----------
   function renderOutputs() {
-    const root = $("#outputsList"); root.innerHTML = "";
+    const root = $("#outputsList"); if (!root) return;
+    root.innerHTML = "";
     model.outputs.forEach(o => {
       const el = document.createElement("div");
       el.className = "item";
@@ -837,53 +746,63 @@
     model.treatments.forEach(t => delete t.deltas[id]);
     renderOutputs(); renderTreatments(); renderDatabaseTags(); calcAndRender();
   }
-  $("#addOutput")?.addEventListener("click", () => {
-    const id = uid();
-    model.outputs.push({ id, name: "Custom Output", unit: "unit", value: 0, source: "Input Directly" });
-    model.treatments.forEach(t => (t.deltas[id] = 0));
-    renderOutputs(); renderTreatments(); renderDatabaseTags();
-  });
+  if ($("#addOutput")) {
+    $("#addOutput").addEventListener("click", () => {
+      const id = uid();
+      model.outputs.push({ id, name: "Custom Output", unit: "unit", value: 0, source: "Input Directly" });
+      model.treatments.forEach(t => (t.deltas[id] = 0));
+      renderOutputs(); renderTreatments(); renderDatabaseTags();
+    });
+  }
 
   function renderTreatments() {
-    const root = $("#treatmentsList"); root.innerHTML = "";
-    model.treatments.forEach(t => {
-      const perHa =
-        (Number(t.annualCost) || 0) +
-        (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0);
+    const root = $("#treatmentsList"); if (!root) return;
+    root.innerHTML = "";
+    const list = [...model.treatments];
+    list.forEach(t => {
+      const materials = Number(t.materialsCost) || 0;
+      const services = Number(t.servicesCost) || 0;
+      const totalPerHa = (materials + services) || (Number(t.annualCost) || 0);
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
         <h4>🚜 Treatment: ${esc(t.name)}</h4>
         <div class="row">
           <div class="field"><label>Name</label><input value="${esc(t.name)}" data-tk="name" data-id="${t.id}" /></div>
-          <div class="field"><label>Area (ha, per replication)</label><input type="number" step="0.01" value="${t.area}" data-tk="area" data-id="${t.id}" /></div>
-          <div class="field"><label>Replications</label><input type="number" min="1" step="1" value="${t.replications||1}" data-tk="replications" data-id="${t.id}" /></div>
+          <div class="field"><label>Area (ha)</label><input type="number" step="0.01" value="${t.area}" data-tk="area" data-id="${t.id}" /></div>
           <div class="field"><label>Adoption (0–1)</label><input type="number" min="0" max="1" step="0.01" value="${t.adoption}" data-tk="adoption" data-id="${t.id}" /></div>
+          <div class="field"><label>Replications</label><input type="number" min="1" step="1" value="${t.replications || 1}" data-tk="replications" data-id="${t.id}" /></div>
           <div class="field"><label>Source</label>
             <select data-tk="source" data-id="${t.id}">
               ${["Farm Trials","Plant Farm","ABARES","GRDC","Input Directly"].map(s => `<option ${s===t.source?"selected":""}>${s}</option>`).join("")}
             </select>
           </div>
-          <div class="field"><label>Annual base cost ($/ha)</label><input type="number" step="0.01" value="${t.annualCost}" data-tk="annualCost" data-id="${t.id}" /></div>
-          <div class="field"><label>Materials cost ($/ha)</label><input type="number" step="0.01" value="${t.materialsCost||0}" data-tk="materialsCost" data-id="${t.id}" /></div>
-          <div class="field"><label>Services cost ($/ha)</label><input type="number" step="0.01" value="${t.servicesCost||0}" data-tk="servicesCost" data-id="${t.id}" /></div>
-          <div class="field"><label>Total variable cost ($/ha)</label><input value="${perHa.toFixed(2)}" disabled /></div>
-          <div class="field"><label>Capital cost ($, Year 0)</label><input type="number" step="0.01" value="${t.capitalCost}" data-tk="capitalCost" data-id="${t.id}" /></div>
+          <div class="field"><label>Control group?</label>
+            <select data-tk="isControl" data-id="${t.id}">
+              <option value="false" ${!t.isControl?"selected":""}>No</option>
+              <option value="true" ${t.isControl?"selected":""}>Yes</option>
+            </select>
+          </div>
+          <div class="field"><label>&nbsp;</label><button class="danger" data-del-treatment="${t.id}">Remove</button></div>
+        </div>
+        <div class="row-6">
+          <div class="field"><label>Materials cost ($/ha)</label><input type="number" step="0.01" value="${t.materialsCost || 0}" data-tk="materialsCost" data-id="${t.id}" /></div>
+          <div class="field"><label>Services cost ($/ha)</label><input type="number" step="0.01" value="${t.servicesCost || 0}" data-tk="servicesCost" data-id="${t.id}" /></div>
+          <div class="field"><label>Total annual cost ($/ha)</label><input type="number" step="0.01" value="${totalPerHa}" readonly /></div>
+          <div class="field"><label>Annual Cost (fallback, $/ha)</label><input type="number" step="0.01" value="${t.annualCost}" data-tk="annualCost" data-id="${t.id}" /></div>
+          <div class="field"><label>Capital Cost ($, y0)</label><input type="number" step="0.01" value="${t.capitalCost}" data-tk="capitalCost" data-id="${t.id}" /></div>
           <div class="field"><label>Constrained?</label>
             <select data-tk="constrained" data-id="${t.id}">
               <option value="true" ${t.constrained?"selected":""}>Yes</option>
               <option value="false" ${!t.constrained?"selected":""}>No</option>
             </select>
           </div>
-          <div class="field">
-            <label>Control treatment?</label>
-            <input type="radio" name="controlTreatment" data-control-id="${t.id}" ${model.controlTreatmentId===t.id || t.isControl ? "checked" : ""}/>
-          </div>
-          <div class="field"><label>&nbsp;</label><button class="danger" data-del-treatment="${t.id}">Remove</button></div>
         </div>
-
-        <h5>Output deltas (per ha)</h5>
+        <div class="field">
+          <label>Notes (e.g. replication design, control definition)</label>
+          <textarea data-tk="notes" data-id="${t.id}" rows="2">${esc(t.notes || "")}</textarea>
+        </div>
+        <h5>Output Deltas (per ha)</h5>
         <div class="row">
           ${model.outputs.map(o => `
             <div class="field">
@@ -902,63 +821,75 @@
       const tk = e.target.dataset.tk;
       if (tk) {
         if (tk === "constrained") t[tk] = e.target.value === "true";
-        else if (tk === "name" || tk === "source") t[tk] = e.target.value;
-        else if (tk === "replications") t[tk] = Math.max(1, +e.target.value||1);
-        else t[tk] = +e.target.value;
+        else if (tk === "name" || tk === "source" || tk === "notes") t[tk] = e.target.value;
+        else if (tk === "isControl") {
+          const val = e.target.value === "true";
+          model.treatments.forEach(tt => { tt.isControl = false; });
+          if (val) t.isControl = true;
+          renderTreatments();
+          calcAndRenderDebounced();
+          return;
+        } else if (tk === "replications") {
+          t[tk] = Math.max(1, Math.round(+e.target.value || 1));
+        } else {
+          t[tk] = +e.target.value;
+        }
       }
       const td = e.target.dataset.td;
       if (td) t.deltas[td] = +e.target.value;
       calcAndRenderDebounced();
     };
-    root.onclick = e => {
-      const id = e.target.dataset.delTreatment;
-      if (id) {
-        if (!confirm("Remove this treatment?")) return;
-        model.treatments = model.treatments.filter(x => x.id !== id);
-        if (model.controlTreatmentId === id) {
-          model.controlTreatmentId = model.treatments[0]?.id || null;
-        }
-        renderTreatments(); renderDatabaseTags(); calcAndRender();
+    root.addEventListener("click", e => {
+      const id = e.target.dataset.delTreatment; if (!id) return;
+      if (!confirm("Remove this treatment?")) return;
+      model.treatments = model.treatments.filter(x => x.id !== id);
+      renderTreatments(); renderDatabaseTags(); calcAndRender();
+    });
+  }
+  if ($("#addTreatment")) {
+    $("#addTreatment").addEventListener("click", () => {
+      if (model.treatments.length >= 64) {
+        alert("Maximum of 64 treatments reached.");
         return;
       }
-      const ctrlId = e.target.dataset.controlId;
-      if (ctrlId) {
-        model.controlTreatmentId = ctrlId;
-        model.treatments.forEach(t => t.isControl = (t.id === ctrlId));
-      }
-    };
+      const t = {
+        id: uid(),
+        name: "New Treatment",
+        area: 0,
+        adoption: 0.5,
+        deltas: {},
+        annualCost: 0,
+        materialsCost: 0,
+        servicesCost: 0,
+        capitalCost: 0,
+        constrained: true,
+        source: "Input Directly",
+        replications: 1,
+        isControl: false,
+        notes: ""
+      };
+      model.outputs.forEach(o => { t.deltas[o.id] = 0; });
+      model.treatments.push(t);
+      renderTreatments(); renderDatabaseTags();
+    });
   }
-  $("#addTreatment")?.addEventListener("click", () => {
-    if (model.treatments.length >= 64) {
-      alert("For clarity, the tool supports up to 64 treatments.");
-      return;
-    }
-    const t = {
-      id: uid(),
-      name: "New treatment",
-      area: 100,
-      replications: 1,
-      adoption: 0.7,
-      deltas: {},
-      annualCost: 0,
-      materialsCost: 0,
-      servicesCost: 0,
-      capitalCost: 0,
-      constrained: true,
-      source: "Input Directly",
-      isControl: false,
-      useDepreciation: false,
-      deprMethod: "sl",
-      deprLife: 5,
-      deprRate: 20
-    };
-    model.outputs.forEach(o => { t.deltas[o.id] = 0; });
-    model.treatments.push(t);
-    renderTreatments(); renderDatabaseTags();
-  });
 
   function renderBenefits() {
-    const root = $("#benefitsList"); root.innerHTML = "";
+    const root = $("#benefitsList"); if (!root) return;
+    root.innerHTML = "";
+    const THEMES = [
+      "Soil chemical",
+      "Soil physical",
+      "Soil biological",
+      "Soil carbon",
+      "Soil pH by depth",
+      "Soil nutrients by depth",
+      "Soil properties by treatment",
+      "Cost savings",
+      "Water retention",
+      "Risk reduction",
+      "Other"
+    ];
     model.benefits.forEach(b => {
       const el = document.createElement("div");
       el.className = "item";
@@ -966,26 +897,14 @@
         <h4>🌱 ${esc(b.label || "Benefit")}</h4>
         <div class="row-6">
           <div class="field"><label>Label</label><input value="${esc(b.label||"")}" data-bk="label" data-id="${b.id}" /></div>
-          <div class="field"><label>Domain</label>
-            <select data-bk="domain" data-id="${b.id}">
-              ${[
-                "Soil health – chemical",
-                "Soil health – physical",
-                "Soil health – biological",
-                "Soil carbon",
-                "Soil pH by depth",
-                "Soil nutrients by depth",
-                "Soil properties by treatment",
-                "Cost savings",
-                "Water retention",
-                "Risk reduction",
-                "Other"
-              ].map(d => `<option ${d===(b.domain||"Other")?"selected":""}>${d}</option>`).join("")}
-            </select>
-          </div>
           <div class="field"><label>Category</label>
             <select data-bk="category" data-id="${b.id}">
               ${["C1","C2","C3","C4","C5","C6","C7","C8"].map(c=>`<option ${c===b.category?"selected":""}>${c}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field"><label>Benefit type</label>
+            <select data-bk="theme" data-id="${b.id}">
+              ${THEMES.map(th=>`<option ${th===(b.theme||"")?"selected":""}>${th}</option>`).join("")}
             </select>
           </div>
           <div class="field"><label>Frequency</label>
@@ -996,15 +915,18 @@
           </div>
           <div class="field"><label>Start year</label><input type="number" value="${b.startYear||model.time.startYear}" data-bk="startYear" data-id="${b.id}" /></div>
           <div class="field"><label>End year</label><input type="number" value="${b.endYear||model.time.startYear}" data-bk="endYear" data-id="${b.id}" /></div>
-          <div class="field"><label>Once year</label><input type="number" value="${b.year||model.time.startYear}" data-bk="year" data-id="${b.id}" /></div>
         </div>
 
         <div class="row-6">
+          <div class="field"><label>Once year</label><input type="number" value="${b.year||model.time.startYear}" data-bk="year" data-id="${b.id}" /></div>
           <div class="field"><label>Unit value ($)</label><input type="number" step="0.01" value="${b.unitValue||0}" data-bk="unitValue" data-id="${b.id}" /></div>
           <div class="field"><label>Quantity</label><input type="number" step="0.01" value="${b.quantity||0}" data-bk="quantity" data-id="${b.id}" /></div>
           <div class="field"><label>Abatement</label><input type="number" step="0.01" value="${b.abatement||0}" data-bk="abatement" data-id="${b.id}" /></div>
           <div class="field"><label>Annual amount ($)</label><input type="number" step="0.01" value="${b.annualAmount||0}" data-bk="annualAmount" data-id="${b.id}" /></div>
           <div class="field"><label>Growth (%/yr)</label><input type="number" step="0.01" value="${b.growthPct||0}" data-bk="growthPct" data-id="${b.id}" /></div>
+        </div>
+
+        <div class="row-6">
           <div class="field"><label>Link adoption?</label>
             <select data-bk="linkAdoption" data-id="${b.id}">
               <option value="true" ${b.linkAdoption?"selected":""}>Yes</option>
@@ -1017,9 +939,6 @@
               <option value="false" ${!b.linkRisk?"selected":""}>No</option>
             </select>
           </div>
-        </div>
-
-        <div class="row-6">
           <div class="field"><label>P0 (baseline prob)</label><input type="number" step="0.001" value="${b.p0||0}" data-bk="p0" data-id="${b.id}" /></div>
           <div class="field"><label>P1 (with-project prob)</label><input type="number" step="0.001" value="${b.p1||0}" data-bk="p1" data-id="${b.id}" /></div>
           <div class="field"><label>Consequence ($)</label><input type="number" step="0.01" value="${b.consequence||0}" data-bk="consequence" data-id="${b.id}" /></div>
@@ -1035,35 +954,38 @@
       const b = model.benefits.find(x => x.id === id); if (!b) return;
       const k = e.target.dataset.bk;
       if (!k) return;
-      if (k === "label" || k === "category" || k === "frequency" || k === "notes" || k === "domain") b[k] = e.target.value;
+      if (["label","category","frequency","notes","theme"].includes(k)) b[k] = e.target.value;
       else if (k === "linkAdoption" || k === "linkRisk") b[k] = e.target.value === "true";
       else b[k] = +e.target.value;
       calcAndRenderDebounced();
     };
-    root.onclick = e => {
+    root.addEventListener("click", e => {
       const id = e.target.dataset.delBenefit; if (!id) return;
       if (!confirm("Remove this benefit item?")) return;
       model.benefits = model.benefits.filter(x => x.id !== id);
       renderBenefits(); calcAndRender();
-    };
-  }
-  $("#addBenefit")?.addEventListener("click", () => {
-    model.benefits.push({
-      id: uid(), label: "New benefit", domain: "Other", category: "C4", frequency: "Annual",
-      startYear: model.time.startYear, endYear: model.time.startYear, year: model.time.startYear,
-      unitValue: 0, quantity: 0, abatement: 0, annualAmount: 0, growthPct: 0,
-      linkAdoption: true, linkRisk: true, p0: 0, p1: 0, consequence: 0, notes: ""
     });
-    renderBenefits();
-  });
+  }
+  if ($("#addBenefit")) {
+    $("#addBenefit").addEventListener("click", () => {
+      model.benefits.push({
+        id: uid(), label: "New Benefit", category: "C4", theme: "Other", frequency: "Annual",
+        startYear: model.time.startYear, endYear: model.time.startYear, year: model.time.startYear,
+        unitValue: 0, quantity: 0, abatement: 0, annualAmount: 0, growthPct: 0,
+        linkAdoption: true, linkRisk: true, p0: 0, p1: 0, consequence: 0, notes: ""
+      });
+      renderBenefits();
+    });
+  }
 
   function renderCosts() {
-    const root = $("#costsList"); root.innerHTML = "";
+    const root = $("#costsList"); if (!root) return;
+    root.innerHTML = "";
     model.otherCosts.forEach(c => {
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
-        <h4>💰 Cost item: ${esc(c.label)}</h4>
+        <h4>💰 Cost Item: ${esc(c.label)}</h4>
         <div class="row-6">
           <div class="field"><label>Label</label><input value="${esc(c.label)}" data-ck="label" data-id="${c.id}" /></div>
           <div class="field"><label>Type</label>
@@ -1072,20 +994,30 @@
               <option value="capital" ${c.type==="capital"?"selected":""}>Capital</option>
             </select>
           </div>
-          <div class="field"><label>Cost category</label>
-            <select data-ck="costCategory" data-id="${c.id}">
-              <option value="capital" ${c.costCategory==="capital"?"selected":""}>Capital</option>
-              <option value="labour" ${c.costCategory==="labour"?"selected":""}>Labour</option>
-              <option value="materials" ${c.costCategory==="materials"?"selected":""}>Materials</option>
-              <option value="services" ${c.costCategory==="services"?"selected":""}>Services</option>
-              <option value="other" ${!c.costCategory || c.costCategory==="other"?"selected":""}>Other production</option>
+          <div class="field"><label>Category</label>
+            <select data-ck="category" data-id="${c.id}">
+              <option ${c.category==="Capital"?"selected":""}>Capital</option>
+              <option ${c.category==="Labour"?"selected":""}>Labour</option>
+              <option ${c.category==="Materials"?"selected":""}>Materials</option>
+              <option ${c.category==="Services"?"selected":""}>Services</option>
             </select>
           </div>
           <div class="field"><label>Annual ($/yr)</label><input type="number" step="0.01" value="${c.annual ?? 0}" data-ck="annual" data-id="${c.id}" /></div>
-          <div class="field"><label>Start year</label><input type="number" value="${c.startYear ?? model.time.startYear}" data-ck="startYear" data-id="${c.id}" /></div>
-          <div class="field"><label>End year</label><input type="number" value="${c.endYear ?? model.time.startYear}" data-ck="endYear" data-id="${c.id}" /></div>
+          <div class="field"><label>Start Year</label><input type="number" value="${c.startYear ?? model.time.startYear}" data-ck="startYear" data-id="${c.id}" /></div>
+          <div class="field"><label>End Year</label><input type="number" value="${c.endYear ?? model.time.startYear}" data-ck="endYear" data-id="${c.id}" /></div>
+        </div>
+        <div class="row-6">
           <div class="field"><label>Capital ($)</label><input type="number" step="0.01" value="${c.capital ?? 0}" data-ck="capital" data-id="${c.id}" /></div>
-          <div class="field"><label>Capital year</label><input type="number" value="${c.year ?? model.time.startYear}" data-ck="year" data-id="${c.id}" /></div>
+          <div class="field"><label>Capital Year</label><input type="number" value="${c.year ?? model.time.startYear}" data-ck="year" data-id="${c.id}" /></div>
+          <div class="field"><label>Depreciation method</label>
+            <select data-ck="depMethod" data-id="${c.id}">
+              <option value="none" ${c.depMethod==="none"?"selected":""}>None</option>
+              <option value="straight" ${c.depMethod==="straight"?"selected":""}>Straight-line</option>
+              <option value="declining" ${c.depMethod==="declining"?"selected":""}>Declining-balance</option>
+            </select>
+          </div>
+          <div class="field"><label>Life (years)</label><input type="number" step="1" min="1" value="${c.depLife || 5}" data-ck="depLife" data-id="${c.id}" /></div>
+          <div class="field"><label>Declining rate (%/yr)</label><input type="number" step="1" value="${c.depRate || 30}" data-ck="depRate" data-id="${c.id}" /></div>
           <div class="field"><label>Constrained?</label>
             <select data-ck="constrained" data-id="${c.id}">
               <option value="true" ${c.constrained?"selected":""}>Yes</option>
@@ -1100,157 +1032,270 @@
     root.oninput = e => {
       const id = e.target.dataset.id, k = e.target.dataset.ck; if (!id || !k) return;
       const c = model.otherCosts.find(x => x.id === id); if (!c) return;
-      if (k === "label" || k === "type" || k==="costCategory") c[k] = e.target.value;
+      if (["label","type","category","depMethod"].includes(k)) c[k] = e.target.value;
       else if (k === "constrained") c[k] = e.target.value === "true";
       else c[k] = +e.target.value;
       calcAndRenderDebounced();
     };
-    root.onclick = e => {
+    root.addEventListener("click", e => {
       const id = e.target.dataset.delCost; if (!id) return;
       if (!confirm("Remove this cost item?")) return;
       model.otherCosts = model.otherCosts.filter(x => x.id !== id);
       renderCosts(); calcAndRender();
-    };
+    });
   }
 
   function renderDatabaseTags() {
-    const outRoot = $("#dbOutputs"); outRoot.innerHTML = "";
-    model.outputs.forEach(o => {
-      const el = document.createElement("div");
-      el.className = "item";
-      el.innerHTML = `
-        <div class="row-2">
-          <div class="field"><label>${esc(o.name)} (${esc(o.unit)})</label></div>
-          <div class="field">
-            <label>Source</label>
-            <select data-db-out="${o.id}">
-              ${["Farm Trials","Plant Farm","ABARES","GRDC","Input Directly"].map(s => `<option ${s===o.source?"selected":""}>${s}</option>`).join("")}
-            </select>
-          </div>
-        </div>`;
-      outRoot.appendChild(el);
-    });
-    outRoot.onchange = e => {
-      const id = e.target.dataset.dbOut;
-      const o = model.outputs.find(x => x.id === id);
-      if (o) o.source = e.target.value;
-    };
+    const outRoot = $("#dbOutputs"); if (outRoot) {
+      outRoot.innerHTML = "";
+      model.outputs.forEach(o => {
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="row-2">
+            <div class="field"><label>${esc(o.name)} (${esc(o.unit)})</label></div>
+            <div class="field">
+              <label>Source</label>
+              <select data-db-out="${o.id}">
+                ${["Farm Trials","Plant Farm","ABARES","GRDC","Input Directly"].map(s => `<option ${s===o.source?"selected":""}>${s}</option>`).join("")}
+              </select>
+            </div>
+          </div>`;
+        outRoot.appendChild(el);
+      });
+      outRoot.onchange = e => {
+        const id = e.target.dataset.dbOut;
+        const o = model.outputs.find(x => x.id === id);
+        if (o) o.source = e.target.value;
+      };
+    }
 
-    const tRoot = $("#dbTreatments"); tRoot.innerHTML = "";
-    model.treatments.forEach(t => {
-      const el = document.createElement("div");
-      el.className = "item";
-      el.innerHTML = `
-        <div class="row-2">
-          <div class="field"><label>${esc(t.name)}</label></div>
-          <div class="field">
-            <label>Source</label>
-            <select data-db-t="${t.id}">
-              ${["Farm Trials","Plant Farm","ABARES","GRDC","Input Directly"].map(s => `<option ${s===t.source?"selected":""}>${s}</option>`).join("")}
-            </select>
-          </div>
-        </div>`;
-      tRoot.appendChild(el);
-    });
-    tRoot.onchange = e => {
-      const id = e.target.dataset.dbT;
-      const t = model.treatments.find(x => x.id === id);
-      if (t) t.source = e.target.value;
-    };
+    const tRoot = $("#dbTreatments"); if (tRoot) {
+      tRoot.innerHTML = "";
+      model.treatments.forEach(t => {
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="row-2">
+            <div class="field"><label>${esc(t.name)}</label></div>
+            <div class="field">
+              <label>Source</label>
+              <select data-db-t="${t.id}">
+                ${["Farm Trials","Plant Farm","ABARES","GRDC","Input Directly"].map(s => `<option ${s===t.source?"selected":""}>${s}</option>`).join("")}
+              </select>
+            </div>
+          </div>`;
+        tRoot.appendChild(el);
+      });
+      tRoot.onchange = e => {
+        const id = e.target.dataset.dbT;
+        const t = model.treatments.find(x => x.id === id);
+        if (t) t.source = e.target.value;
+      };
+    }
+  }
+
+  function computeSingleTreatmentMetrics(t, rate, years, adoptMul, risk) {
+    let valuePerHa = 0;
+    model.outputs.forEach(o => (valuePerHa += (Number(t.deltas[o.id]) || 0) * (Number(o.value) || 0)));
+    const adopt = clamp(t.adoption * adoptMul, 0, 1);
+    const area = Number(t.area) || 0;
+    const annualBen = valuePerHa * area * (1 - clamp(risk, 0, 1)) * adopt;
+    const annualCostPerHa = ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0)) || (Number(t.annualCost) || 0);
+    const annualCost = annualCostPerHa * area;
+    const cap = Number(t.capitalCost) || 0;
+    const pvBen = annualBen * annuityFactor(years, rate);
+    const pvCost = cap + annualCost * annuityFactor(years, rate);
+    const bcr = pvCost > 0 ? pvBen / pvCost : NaN;
+    const npv = pvBen - pvCost;
+    const cf = new Array(years + 1).fill(0);
+    cf[0] = -cap;
+    for (let i = 1; i <= years; i++) cf[i] = annualBen - annualCost;
+    const irrVal = irr(cf);
+    const mirrVal = mirr(cf, model.time.mirrFinance, model.time.mirrReinvest);
+    const roi = pvCost > 0 ? (npv / pvCost) * 100 : NaN;
+    const gm = annualBen - annualCost;
+    const gpm = annualBen > 0 ? (gm / annualBen) * 100 : NaN;
+    const pb = payback(cf, rate);
+    return { pvBen, pvCost, bcr, npv, irrVal, mirrVal, roi, gm, gpm, pb };
   }
 
   function renderTreatmentSummary(rate, adoptMul, risk) {
-    const root = $("#treatmentSummary"); root.innerHTML = "";
-    const rows = [];
-    model.treatments.forEach(t => {
-      let valuePerHa = 0;
-      model.outputs.forEach(o => (valuePerHa += (Number(t.deltas[o.id]) || 0) * (Number(o.value) || 0)));
-      const rep = t.replications || 1;
-      const area = (Number(t.area) || 0) * rep;
-      const adopt = clamp(t.adoption * adoptMul, 0, 1);
-      const annualBen = valuePerHa * area * (1 - clamp(risk, 0, 1)) * adopt;
-      const perHaCost =
-        (Number(t.annualCost) || 0) +
-        (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0);
-      const annualCost = perHaCost * area;
-      const cap = Number(t.capitalCost) || 0;
-      const pvBen = annualBen * annuityFactor(model.time.years, rate);
-      const pvCost = cap + annualCost * annuityFactor(model.time.years, rate);
-      const bcr = pvCost > 0 ? pvBen / pvCost : NaN;
-      const npv = pvBen - pvCost;
-
-      rows.push({
-        name: t.name,
-        isControl: t.id === model.controlTreatmentId,
-        area,
-        adopt,
-        annualBen,
-        annualCost,
-        pvBen,
-        pvCost,
-        bcr,
-        npv
-      });
+    const root = $("#treatmentSummary"); if (!root) return;
+    root.innerHTML = "";
+    const list = [...model.treatments].map(t => {
+      const m = computeSingleTreatmentMetrics(t, rate, model.time.years, adoptMul, risk);
+      return { t, m };
+    }).sort((a, b) => {
+      const bcrA = isFinite(a.m.bcr) ? a.m.bcr : -Infinity;
+      const bcrB = isFinite(b.m.bcr) ? b.m.bcr : -Infinity;
+      return bcrB - bcrA;
     });
 
-    rows.sort((a,b) => b.npv - a.npv);
-
-    rows.forEach(r => {
+    list.forEach((entry, idx) => {
+      const t = entry.t, m = entry.m;
+      const adopt = clamp(t.adoption * adoptMul, 0, 1);
+      const area = Number(t.area) || 0;
+      const annualBen = m.gm + ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0) || (Number(t.annualCost) || 0)) * area;
+      const annualCostPerHa = ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0)) || (Number(t.annualCost) || 0);
+      const annualCost = annualCostPerHa * area;
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
         <div class="row-6">
-          <div class="field"><label>Rank</label><div class="metric"><div class="value">${rows.indexOf(r)+1}</div></div></div>
-          <div class="field"><label>Treatment</label><div class="metric"><div class="value">${esc(r.name)}${r.isControl?" (control)":""}</div></div></div>
-          <div class="field"><label>Area (all reps)</label><div class="metric"><div class="value">${fmt(r.area)} ha</div></div></div>
-          <div class="field"><label>Adoption</label><div class="metric"><div class="value">${fmt(r.adopt)}</div></div></div>
-          <div class="field"><label>Annual benefit</label><div class="metric"><div class="value">${money(r.annualBen)}</div></div></div>
-          <div class="field"><label>Annual cost</label><div class="metric"><div class="value">${money(r.annualCost)}</div></div></div>
-          <div class="field"><label>PV benefit</label><div class="metric"><div class="value">${money(r.pvBen)}</div></div></div>
-          <div class="field"><label>PV cost</label><div class="metric"><div class="value">${money(r.pvCost)}</div></div></div>
-          <div class="field"><label>BCR</label><div class="metric"><div class="value">${isFinite(r.bcr)?fmt(r.bcr):"—"}</div></div></div>
-          <div class="field"><label>NPV</label><div class="metric"><div class="value">${money(r.npv)}</div></div></div>
+          <div class="field"><label>Rank</label><div class="metric"><div class="value">${idx + 1}</div></div></div>
+          <div class="field"><label>Treatment</label><div class="metric"><div class="value">${esc(t.name)}${t.isControl ? " (Control)" : ""}</div></div></div>
+          <div class="field"><label>Area</label><div class="metric"><div class="value">${fmt(area)} ha</div></div></div>
+          <div class="field"><label>Adoption</label><div class="metric"><div class="value">${fmt(adopt)}</div></div></div>
+          <div class="field"><label>Annual Benefit</label><div class="metric"><div class="value">${money(annualBen)}</div></div></div>
+          <div class="field"><label>Annual Cost</label><div class="metric"><div class="value">${money(annualCost)}</div></div></div>
+          <div class="field"><label>PV Benefit</label><div class="metric"><div class="value">${money(m.pvBen)}</div></div></div>
+          <div class="field"><label>PV Cost</label><div class="metric"><div class="value">${money(m.pvCost)}</div></div></div>
+          <div class="field"><label>BCR</label><div class="metric"><div class="value">${isFinite(m.bcr)?fmt(m.bcr):"—"}</div></div></div>
+          <div class="field"><label>NPV</label><div class="metric"><div class="value">${money(m.npv)}</div></div></div>
+          <div class="field"><label>IRR</label><div class="metric"><div class="value">${isFinite(m.irrVal)?percent(m.irrVal):"—"}</div></div></div>
+          <div class="field"><label>Payback</label><div class="metric"><div class="value">${m.pb!=null?m.pb:"Not reached"}</div></div></div>
         </div>`;
       root.appendChild(el);
     });
   }
 
-  function renderTimeProjections(rate, adoptMul, risk) {
-    const root = $("#projectionSummary");
-    if (!root) return;
+  function computeControlAndTreatmentGroupMetrics(rate, adoptMul, risk) {
+    const years = model.time.years;
+    const control = model.treatments.find(t => t.isControl);
+    let controlMetrics = null;
+    if (control) {
+      controlMetrics = computeSingleTreatmentMetrics(control, rate, years, adoptMul, risk);
+    }
+    const combined = {
+      area: 0,
+      adoption: 1,
+      deltas: {},
+      materialsCost: 0,
+      servicesCost: 0,
+      annualCost: 0,
+      capitalCost: 0
+    };
+    model.outputs.forEach(o => combined.deltas[o.id] = 0);
+    model.treatments.forEach(t => {
+      if (t.isControl) return;
+      combined.capitalCost += Number(t.capitalCost) || 0;
+      const area = Number(t.area) || 0;
+      const adopt = clamp(t.adoption * adoptMul, 0, 1);
+      combined.area += area;
+      const annualCostPerHa = ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0)) || (Number(t.annualCost) || 0);
+      combined.annualCost += annualCostPerHa * area;
+      model.outputs.forEach(o => {
+        combined.deltas[o.id] += (Number(t.deltas[o.id]) || 0) * (area * adopt);
+      });
+    });
+    let treatMetrics = null;
+    if (combined.capitalCost || combined.annualCost || Object.values(combined.deltas).some(v => v !== 0)) {
+      const temp = {
+        id: "treatGroup",
+        name: "Treatment group",
+        area: combined.area || 1,
+        adoption: 1,
+        deltas: {},
+        annualCost: 0,
+        materialsCost: 0,
+        servicesCost: 0,
+        capitalCost: combined.capitalCost
+      };
+      model.outputs.forEach(o => {
+        const perHaDelta = combined.area ? combined.deltas[o.id] / combined.area : 0;
+        temp.deltas[o.id] = perHaDelta;
+      });
+      const annualCostPerHa = combined.area ? combined.annualCost / combined.area : 0;
+      temp.annualCost = annualCostPerHa;
+      treatMetrics = computeSingleTreatmentMetrics(temp, rate, years, 1, risk);
+    }
+    return { controlMetrics, treatMetrics };
+  }
+
+  function renderDepreciationSummary() {
+    const root = $("#depSummary"); if (!root) return;
+    root.innerHTML = "";
     const N = model.time.years;
-    const horizons = [5,10,15,20,25].filter(h => h <= N);
-    if (!horizons.length) {
-      root.innerHTML = "<p class='small muted'>Increase the analysis horizon to at least 5 years to see time-based projections.</p>";
+    const baseYear = model.time.startYear;
+    const totalPerYear = new Array(N + 1).fill(0);
+    const rows = [];
+
+    model.otherCosts.forEach(c => {
+      if (c.type !== "capital") return;
+      const method = c.depMethod || "none";
+      if (method === "none") return;
+      const cost = Number(c.capital) || 0;
+      if (!cost) return;
+      const life = Math.max(1, Number(c.depLife) || 5);
+      const rate = Number(c.depRate) || 30;
+      const startIndex = (Number(c.year) || baseYear) - baseYear;
+      const sched = [];
+      if (method === "straight") {
+        const annual = cost / life;
+        for (let i = 0; i < life; i++) {
+          const idx = startIndex + i;
+          if (idx >= 0 && idx <= N) {
+            sched[idx] = (sched[idx] || 0) + annual;
+            totalPerYear[idx] += annual;
+          }
+        }
+      } else if (method === "declining") {
+        let book = cost;
+        for (let i = 0; i < life; i++) {
+          const dep = book * rate / 100;
+          const idx = startIndex + i;
+          if (idx >= 0 && idx <= N) {
+            sched[idx] = (sched[idx] || 0) + dep;
+            totalPerYear[idx] += dep;
+          }
+          book -= dep;
+          if (book <= 0) break;
+        }
+      }
+      const firstDep = sched.find(v => v > 0) || 0;
+      rows.push({
+        label: c.label,
+        method: method === "straight" ? "Straight-line" : "Declining-balance",
+        life,
+        rate: method === "declining" ? rate : "",
+        firstDep
+      });
+    });
+
+    if (!rows.length) {
+      const p = document.createElement("p");
+      p.className = "small muted";
+      p.textContent = "No capital items with depreciation configured. Set Depreciation method on capital costs to see a schedule.";
+      root.appendChild(p);
       return;
     }
 
-    const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode,
-      model.time.discMode==="schedule" ? "def" : null, null);
-    const { benefitByYear, costByYear } = all;
-
-    const rows = horizons.map(h => {
-      const T = h;
-      const pvB = partialPresentValue(benefitByYear, rate, T, model.time.discMode==="schedule"?"def":null);
-      const pvC = partialPresentValue(costByYear, rate, T, model.time.discMode==="schedule"?"def":null);
-      const npv = pvB - pvC;
-      const bcr = pvC>0 ? pvB/pvC : NaN;
-      return { horizon:T, pvB, pvC, npv, bcr };
-    });
-
-    let html = "<table class='projection-table'><thead><tr><th>Horizon (years)</th><th>PV benefits (with-project)</th><th>PV costs (with-project)</th><th>NPV (with-project)</th><th>BCR (with-project)</th></tr></thead><tbody>";
-    rows.forEach(r => {
-      html += `<tr>
-        <td>${r.horizon}</td>
-        <td>${money(r.pvB)}</td>
-        <td>${money(r.pvC)}</td>
-        <td>${money(r.npv)}</td>
-        <td>${isFinite(r.bcr)?fmt(r.bcr):"—"}</td>
-      </tr>`;
-    });
-    html += "</tbody></table>";
-    root.innerHTML = html;
+    const tbl = document.createElement("table");
+    tbl.className = "dep-table";
+    tbl.innerHTML = `
+      <thead>
+        <tr>
+          <th>Cost item</th>
+          <th>Method</th>
+          <th>Life (yrs)</th>
+          <th>Rate (%/yr)</th>
+          <th>Approx. first-year depreciation ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${esc(r.label)}</td>
+            <td>${esc(r.method)}</td>
+            <td>${r.life}</td>
+            <td>${r.rate||""}</td>
+            <td>${money(r.firstDep)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    `;
+    root.appendChild(tbl);
   }
 
   function renderAll() {
@@ -1267,37 +1312,90 @@
     const adoptMul = model.adoption.base;
     const risk = model.risk.base;
 
-    const all = computeAll(
-      rate,
-      adoptMul,
-      risk,
-      model.sim.bcrMode,
-      model.time.discMode==="schedule" ? "def" : null,
-      null
-    );
+    const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
 
-    const {
-      pvBenefits, pvCosts, npv, bcr, irrVal,
-      mirrVal, roi, annualGM, profitMargin,
-      paybackYears
-    } = all;
-
-    setVal("#pvBenefits", money(pvBenefits));
-    setVal("#pvCosts", money(pvCosts));
+    setVal("#pvBenefits", money(all.pvBenefits));
+    setVal("#pvCosts", money(all.pvCosts));
     const npvEl = $("#npv");
-    npvEl.textContent = money(npv);
-    npvEl.className = "value " + (npv >= 0 ? "positive" : "negative");
-    setVal("#bcr", isFinite(bcr) ? fmt(bcr) : "—");
-    setVal("#irr", isFinite(irrVal) ? percent(irrVal) : "—");
-    setVal("#mirr", isFinite(mirrVal) ? percent(mirrVal) : "—");
-    setVal("#roi", isFinite(roi) ? percent(roi) : "—");
-    setVal("#grossMargin", money(annualGM));
-    setVal("#profitMargin", isFinite(profitMargin) ? percent(profitMargin) : "—");
-    setVal("#payback", paybackYears != null ? paybackYears : "Not reached");
+    if (npvEl) {
+      npvEl.textContent = money(all.npv);
+      npvEl.className = "value " + (all.npv >= 0 ? "positive" : "negative");
+    }
+    setVal("#bcr", isFinite(all.bcr) ? fmt(all.bcr) : "—");
+    setVal("#irr", isFinite(all.irrVal) ? percent(all.irrVal) : "—");
+    setVal("#mirr", isFinite(all.mirrVal) ? percent(all.mirrVal) : "—");
+    setVal("#roi", isFinite(all.roi) ? percent(all.roi) : "—");
+    setVal("#grossMargin", money(all.annualGM));
+    setVal("#profitMargin", isFinite(all.profitMargin) ? percent(all.profitMargin) : "—");
+    setVal("#payback", all.paybackYears != null ? all.paybackYears : "Not reached");
 
     renderTreatmentSummary(rate, adoptMul, risk);
-    renderTimeProjections(rate, adoptMul, risk);
-    $("#simBcrTargetLabel").textContent = model.sim.targetBCR;
+
+    const { controlMetrics, treatMetrics } = computeControlAndTreatmentGroupMetrics(rate, adoptMul, risk);
+    if (controlMetrics) {
+      setVal("#pvBenefitsControl", money(controlMetrics.pvBen));
+      setVal("#pvCostsControl", money(controlMetrics.pvCost));
+      setVal("#npvControl", money(controlMetrics.npv));
+      setVal("#bcrControl", isFinite(controlMetrics.bcr)?fmt(controlMetrics.bcr):"—");
+      setVal("#irrControl", isFinite(controlMetrics.irrVal)?percent(controlMetrics.irrVal):"—");
+      setVal("#roiControl", isFinite(controlMetrics.roi)?percent(controlMetrics.roi):"—");
+      setVal("#paybackControl", controlMetrics.pb!=null?controlMetrics.pb:"Not reached");
+      setVal("#gmControl", money(controlMetrics.gm));
+    } else {
+      ["#pvBenefitsControl","#pvCostsControl","#npvControl","#bcrControl","#irrControl","#roiControl","#paybackControl","#gmControl"]
+        .forEach(sel => setVal(sel, "—"));
+    }
+    if (treatMetrics) {
+      setVal("#pvBenefitsTreat", money(treatMetrics.pvBen));
+      setVal("#pvCostsTreat", money(treatMetrics.pvCost));
+      setVal("#npvTreat", money(treatMetrics.npv));
+      setVal("#bcrTreat", isFinite(treatMetrics.bcr)?fmt(treatMetrics.bcr):"—");
+      setVal("#irrTreat", isFinite(treatMetrics.irrVal)?percent(treatMetrics.irrVal):"—");
+      setVal("#roiTreat", isFinite(treatMetrics.roi)?percent(treatMetrics.roi):"—");
+      setVal("#paybackTreat", treatMetrics.pb!=null?treatMetrics.pb:"Not reached");
+      setVal("#gmTreat", money(treatMetrics.gm));
+    } else {
+      ["#pvBenefitsTreat","#pvCostsTreat","#npvTreat","#bcrTreat","#irrTreat","#roiTreat","#paybackTreat","#gmTreat"]
+        .forEach(sel => setVal(sel, "—"));
+    }
+
+    renderTimeProjections(all.benefitByYear, all.costByYear, rate);
+    renderDepreciationSummary();
+
+    if ($("#simBcrTargetLabel")) $("#simBcrTargetLabel").textContent = model.sim.targetBCR;
+  }
+
+  function renderTimeProjections(benefitByYear, costByYear, rate) {
+    const tblBody = $("#timeProjectionTable tbody");
+    if (!tblBody) return;
+    tblBody.innerHTML = "";
+    const maxYears = model.time.years;
+    const npvSeries = [];
+    const usedHorizons = [];
+
+    horizons.forEach(H => {
+      const h = Math.min(H, maxYears);
+      if (h <= 0) return;
+      const b = benefitByYear.slice(0, h + 1);
+      const c = costByYear.slice(0, h + 1);
+      const pvB = presentValue(b, rate);
+      const pvC = presentValue(c, rate);
+      const npv = pvB - pvC;
+      const bcr = pvC > 0 ? pvB / pvC : NaN;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${h}</td>
+        <td>${money(pvB)}</td>
+        <td>${money(pvC)}</td>
+        <td>${money(npv)}</td>
+        <td>${isFinite(bcr)?fmt(bcr):"—"}</td>
+      `;
+      tblBody.appendChild(tr);
+      npvSeries.push(npv);
+      usedHorizons.push(h);
+    });
+
+    drawTimeSeries("timeNpvChart", usedHorizons, npvSeries);
   }
 
   let debTimer = null;
@@ -1317,7 +1415,6 @@
       return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
     };
   }
-
   function triangular(r, a, c, b) {
     const F = (c - a) / (b - a);
     if (r < F) return a + Math.sqrt(r * (b - a) * (c - a));
@@ -1325,7 +1422,7 @@
   }
 
   async function runSimulation() {
-    $("#simStatus").textContent = "Running…";
+    if ($("#simStatus")) $("#simStatus").textContent = "Running…";
     await new Promise(r => setTimeout(r));
     const N = model.sim.n;
     const seed = model.sim.seed;
@@ -1335,11 +1432,10 @@
     const adoptLow = model.adoption.low, adoptBase = model.adoption.base, adoptHigh = model.adoption.high;
     const riskLow = model.risk.low, riskBase = model.risk.base, riskHigh = model.risk.high;
 
-    const levels = [0.05,0.10,0.15,0.20,0.25];
-
     const npvs = new Array(N);
     const bcrs = new Array(N);
     const details = [];
+    const varPct = (model.sim.variationPct || 0) / 100;
 
     for (let i = 0; i < N; i++) {
       const r1 = rand(), r2 = rand(), r3 = rand();
@@ -1347,30 +1443,58 @@
       const adoptMul = clamp(triangular(r2, adoptLow, adoptBase, adoptHigh), 0, 1);
       const risk = clamp(triangular(r3, riskLow, riskBase, riskHigh), 0, 1);
 
-      const Lp = levels[Math.floor(rand()*levels.length)];
-      const Lc = levels[Math.floor(rand()*levels.length)];
-      const Li = levels[Math.floor(rand()*levels.length)];
-      const priceFactor = 1 + (rand()<0.5 ? -1:1) * Lp;
-      const treatCostFactor = 1 + (rand()<0.5 ? -1:1) * Lc;
-      const inputCostFactor = 1 + (rand()<0.5 ? -1:1) * Li;
+      const shockOutputs = model.sim.varyOutputs ? (1 + (rand() * 2 * varPct - varPct)) : 1;
+      const shockTreatCosts = model.sim.varyTreatCosts ? (1 + (rand() * 2 * varPct - varPct)) : 1;
+      const shockInputCosts = model.sim.varyInputCosts ? (1 + (rand() * 2 * varPct - varPct)) : 1;
 
-      const { pvBenefits, pvCosts, bcr, npv } = computeAll(
-        disc,
-        adoptMul,
-        risk,
-        model.sim.bcrMode,
-        null,
-        { priceFactor, treatCostFactor, inputCostFactor }
-      );
+      const origOutValues = model.outputs.map(o => o.value);
+      const origTreatAnn = model.treatments.map(t => t.annualCost);
+      const origTreatMat = model.treatments.map(t => t.materialsCost || 0);
+      const origTreatServ = model.treatments.map(t => t.servicesCost || 0);
+      const origTreatCap = model.treatments.map(t => t.capitalCost);
+      const origOcAnn = model.otherCosts.map(c => c.annual);
+      const origOcCap = model.otherCosts.map(c => c.capital);
 
-      npvs[i] = npv;
-      bcrs[i] = bcr;
-      details.push({ run: i + 1, discount: disc, adoption: adoptMul, risk, pvBenefits, pvCosts, npv, bcr });
+      try {
+        if (model.sim.varyOutputs) {
+          model.outputs.forEach((o, idx) => { o.value = origOutValues[idx] * shockOutputs; });
+        }
+        if (model.sim.varyTreatCosts) {
+          model.treatments.forEach((t, idx) => {
+            t.annualCost = origTreatAnn[idx] * shockTreatCosts;
+            t.materialsCost = origTreatMat[idx] * shockTreatCosts;
+            t.servicesCost = origTreatServ[idx] * shockTreatCosts;
+          });
+        }
+        if (model.sim.varyInputCosts) {
+          model.otherCosts.forEach((c, idx) => {
+            c.annual = origOcAnn[idx] * shockInputCosts;
+            c.capital = origOcCap[idx] * shockInputCosts;
+          });
+        }
+
+        const { pvBenefits, pvCosts, bcr, npv } = computeAll(disc, adoptMul, risk, model.sim.bcrMode);
+        npvs[i] = npv;
+        bcrs[i] = bcr;
+        details.push({ run: i + 1, discount: disc, adoption: adoptMul, risk, pvBenefits, pvCosts, npv, bcr });
+      } finally {
+        model.outputs.forEach((o, idx) => { o.value = origOutValues[idx]; });
+        model.treatments.forEach((t, idx) => {
+          t.annualCost = origTreatAnn[idx];
+          t.materialsCost = origTreatMat[idx];
+          t.servicesCost = origTreatServ[idx];
+          t.capitalCost = origTreatCap[idx];
+        });
+        model.otherCosts.forEach((c, idx) => {
+          c.annual = origOcAnn[idx];
+          c.capital = origOcCap[idx];
+        });
+      }
     }
 
     model.sim.results = { npv: npvs, bcr: bcrs };
     model.sim.details = details;
-    $("#simStatus").textContent = "Done.";
+    if ($("#simStatus")) $("#simStatus").textContent = "Done.";
     renderSimulationResults();
     drawHists();
   }
@@ -1462,96 +1586,63 @@
     if (bcr?.length) drawHist("histBcr", bcr.filter(x => isFinite(x)), 24, v => v.toFixed(2));
   }
 
-  // ---------- STRUCTURED SENSITIVITY ----------
-  function runStructuredSensitivity() {
-    const usePrices = $("#sensPrices")?.checked;
-    const useTreatCosts = $("#sensTreatCosts")?.checked;
-    const useInputCosts = $("#sensInputCosts")?.checked;
-    const useDisc = $("#sensDiscounts")?.checked;
-    const useAdopt = $("#sensAdoption")?.checked;
-    const useRisk = $("#sensRisk")?.checked;
+  function drawTimeSeries(canvasId, xs, ys) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !xs.length || !ys.length) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const params = [];
-    if (usePrices) params.push("Prices");
-    if (useTreatCosts) params.push("Treatment costs");
-    if (useInputCosts) params.push("Input costs");
-    if (useDisc) params.push("Discount rate");
-    if (useAdopt) params.push("Adoption");
-    if (useRisk) params.push("Risk");
+    const padL = 60, padR = 16, padT = 10, padB = 34;
+    const W = canvas.width - padL - padR;
+    const H = canvas.height - padT - padB;
 
-    const levels = [0.05,0.10,0.15,0.20,0.25];
-    const baseRate = model.time.discBase;
-    const discountScenario = model.time.discMode==="schedule" ? "def" : null;
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const yMin = Math.min(minY, 0);
+    const yMax = Math.max(maxY, 0) || 1;
 
-    const rows = [];
+    const xScale = v => padL + ((v - minX) / (maxX - minX || 1)) * W;
+    const yScale = v => padT + H - ((v - yMin) / (yMax - yMin || 1)) * H;
 
-    params.forEach(p => {
-      levels.forEach(L => {
-        ["-","+"].forEach(sign => {
-          const mult = 1 + (sign === "-" ? -L : L);
-          let rate = baseRate;
-          let adoptMul = model.adoption.base;
-          let risk = model.risk.base;
-          let priceFactor = 1;
-          let treatCostFactor = 1;
-          let inputCostFactor = 1;
+    ctx.strokeStyle = "#3c6a52";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT);
+    ctx.lineTo(padL, padT + H);
+    ctx.lineTo(padL + W, padT + H);
+    ctx.stroke();
 
-          if (p === "Prices") priceFactor = mult;
-          if (p === "Treatment costs") treatCostFactor = mult;
-          if (p === "Input costs") inputCostFactor = mult;
-          if (p === "Discount rate") rate = baseRate * mult;
-          if (p === "Adoption") adoptMul = clamp(model.adoption.base * mult,0,1);
-          if (p === "Risk") risk = clamp(model.risk.base * mult,0,1);
+    const zeroY = yScale(0);
+    ctx.strokeStyle = "rgba(200,220,210,0.6)";
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();
+    ctx.moveTo(padL, zeroY);
+    ctx.lineTo(padL + W, zeroY);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-          const res = computeAll(
-            rate,
-            adoptMul,
-            risk,
-            model.sim.bcrMode,
-            discountScenario,
-            { priceFactor, treatCostFactor, inputCostFactor }
-          );
-
-          rows.push({
-            param: p,
-            shock: sign + (L*100).toFixed(0) + "%",
-            rate,
-            adoption: adoptMul,
-            risk,
-            pvB: res.pvBenefits,
-            pvC: res.pvCosts,
-            npv: res.npv,
-            bcr: res.bcr
-          });
-        });
-      });
+    ctx.strokeStyle = "rgba(116,209,140,0.9)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    xs.forEach((xv, idx) => {
+      const x = xScale(xv);
+      const y = yScale(ys[idx]);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
+    ctx.stroke();
 
-    model.sim.sensitivity = rows;
-
-    const root = $("#sensitivityTable");
-    if (!rows.length) {
-      root.innerHTML = "<p class='small muted'>Select at least one parameter to vary.</p>";
-      return;
-    }
-
-    let html = "<div class='card'><h3>Sensitivity grid results</h3>";
-    html += "<table class='sensitivity-table'><thead><tr><th>Parameter</th><th>Shock</th><th>Discount rate (%)</th><th>Adoption</th><th>Risk</th><th>PV benefits</th><th>PV costs</th><th>NPV</th><th>BCR</th></tr></thead><tbody>";
-    rows.forEach(r => {
-      html += `<tr>
-        <td>${esc(r.param)}</td>
-        <td>${esc(r.shock)}</td>
-        <td>${fmt(r.rate)}</td>
-        <td>${fmt(r.adoption)}</td>
-        <td>${fmt(r.risk)}</td>
-        <td>${money(r.pvB)}</td>
-        <td>${money(r.pvC)}</td>
-        <td>${money(r.npv)}</td>
-        <td>${isFinite(r.bcr)?fmt(r.bcr):"—"}</td>
-      </tr>`;
+    ctx.fillStyle = "#c9efd6";
+    ctx.font = "12px system-ui";
+    ctx.textAlign = "center";
+    xs.forEach(xv => {
+      const x = xScale(xv);
+      ctx.fillText(String(xv), x, padT + H + 18);
     });
-    html += "</tbody></table></div>";
-    root.innerHTML = html;
+    ctx.textAlign = "right";
+    ctx.fillText(money(yMax), padL - 6, yScale(yMax) + 4);
+    ctx.fillText(money(0), padL - 6, zeroY + 4);
+    ctx.fillText(money(yMin), padL - 6, yScale(yMin) + 4);
   }
 
   // ---------- EXPORTS ----------
@@ -1574,25 +1665,22 @@
     const rate = model.time.discBase;
     const adoptMul = model.adoption.base;
     const risk = model.risk.base;
-    const all = computeAll(
-      rate,
-      adoptMul,
-      risk,
-      model.sim.bcrMode,
-      model.time.discMode==="schedule"?"def":null,
-      null
-    );
+    const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
 
     return {
       meta: {
         name: model.project.name,
+        lead: model.project.lead,
         analysts: model.project.analysts,
+        team: model.project.team,
         organisation: model.project.organisation,
         contact: model.project.contactEmail,
+        phone: model.project.contactPhone,
         updated: model.project.lastUpdated
       },
       params: {
         startYear: model.time.startYear,
+        projectStartYear: model.time.projectStartYear,
         years: model.time.years,
         discountBase: model.time.discBase,
         discountLow: model.time.discLow,
@@ -1611,13 +1699,16 @@
     const s = buildSummaryForCsv();
     const summaryRows = [
       ["Project", s.meta.name],
-      ["Project lead", model.project.lead],
+      ["Project lead", s.meta.lead],
       ["Analysts", s.meta.analysts],
+      ["Project team", s.meta.team],
       ["Organisation", s.meta.organisation],
-      ["Contact", s.meta.contact],
+      ["Contact email", s.meta.contact],
+      ["Contact phone", s.meta.phone],
       ["Last Updated", s.meta.updated],
       [],
-      ["Start Year", s.params.startYear],
+      ["Analysis Start Year", s.params.startYear],
+      ["Project Start Year", s.params.projectStartYear],
       ["Years", s.params.years],
       ["Discount Rate (Base)", s.params.discountBase],
       ["Discount Rate (Low)", s.params.discountLow],
@@ -1641,31 +1732,24 @@
     ];
     downloadFile(`cba_summary_${slug(s.meta.name)}.csv`, toCsv(summaryRows));
 
-    const treatHeader = ["Treatment","Control?","Area(ha)","Adoption","Annual Benefit","Annual Cost","PV Benefit","PV Cost","BCR","NPV"];
+    const treatHeader = ["Treatment","Area(ha)","Adoption","Annual Benefit","Annual Cost","PV Benefit","PV Cost","BCR","NPV"];
     const treatRows = [treatHeader];
-    const rate = model.time.discBase, adoptMul = model.adoption.base, risk = model.risk.base;
+    const rate = model.time.discBase;
+    const adoptMul = model.adoption.base;
+    const risk = model.risk.base;
     model.treatments.forEach(t => {
-      let valuePerHa = 0;
-      model.outputs.forEach(o => valuePerHa += ((+t.deltas[o.id]||0) * (+o.value||0)));
-      const rep = t.replications || 1;
-      const area = (t.area||0) * rep;
+      const m = computeSingleTreatmentMetrics(t, rate, model.time.years, adoptMul, risk);
       const adopt = clamp(t.adoption * adoptMul, 0, 1);
-      const annBen = valuePerHa * area * (1 - risk) * adopt;
-      const perHaCost =
-        (Number(t.annualCost) || 0) +
-        (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0);
-      const annCost = perHaCost * area;
-      const pvB = annBen * annuityFactor(model.time.years, rate);
-      const pvC = (t.capitalCost||0) + annCost * annuityFactor(model.time.years, rate);
-      const bcr = pvC>0 ? pvB/pvC : "";
-      const npv = pvB - pvC;
-      treatRows.push([t.name, t.id===model.controlTreatmentId?"Yes":"No", area, adopt, annBen, annCost, pvB, pvC, bcr, npv]);
+      const area = Number(t.area) || 0;
+      const annualCostPerHa = ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0)) || (Number(t.annualCost) || 0);
+      const annualCost = annualCostPerHa * area;
+      const annualBen = m.gm + annualCost;
+      treatRows.push([t.name, area, adopt, annualBen, annualCost, m.pvBen, m.pvCost, m.bcr, m.npv]);
     });
     downloadFile(`cba_treatments_${slug(s.meta.name)}.csv`, toCsv(treatRows));
 
-    const benRows = [["Label","Domain","Category","Frequency","StartYear","EndYear","Year","UnitValue","Quantity","Abatement","AnnualAmount","GrowthPct","LinkAdoption","LinkRisk","P0","P1","Consequence","Notes"]];
-    model.benefits.forEach(b => benRows.push([b.label,b.domain,b.category,b.frequency,b.startYear,b.endYear,b.year,b.unitValue,b.quantity,b.abatement,b.annualAmount,b.growthPct,b.linkAdoption,b.linkRisk,b.p0,b.p1,b.consequence,b.notes]));
+    const benRows = [["Label","Category","BenefitType","Frequency","StartYear","EndYear","Year","UnitValue","Quantity","Abatement","AnnualAmount","GrowthPct","LinkAdoption","LinkRisk","P0","P1","Consequence","Notes"]];
+    model.benefits.forEach(b => benRows.push([b.label,b.category,b.theme||"",b.frequency,b.startYear,b.endYear,b.year,b.unitValue,b.quantity,b.abatement,b.annualAmount,b.growthPct,b.linkAdoption,b.linkRisk,b.p0,b.p1,b.consequence,b.notes]));
     downloadFile(`cba_benefits_${slug(s.meta.name)}.csv`, toCsv(benRows));
 
     const outRows = [["Output","Unit","$/unit","Source","Id"]];
@@ -1718,31 +1802,22 @@
     const s = buildSummaryForCsv();
 
     const trRows = model.treatments.map(t => {
-      let valuePerHa = 0;
-      model.outputs.forEach(o => valuePerHa += ((+t.deltas[o.id]||0) * (+o.value||0)));
-      const rep = t.replications || 1;
-      const area = (t.area||0) * rep;
+      const m = computeSingleTreatmentMetrics(t, model.time.discBase, model.time.years, model.adoption.base, model.risk.base);
       const adopt = clamp(t.adoption * model.adoption.base, 0, 1);
-      const annBen = valuePerHa * area * (1 - model.risk.base) * adopt;
-      const perHaCost =
-        (Number(t.annualCost) || 0) +
-        (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0);
-      const annCost = perHaCost * area;
-      const pvB = annBen * annuityFactor(model.time.years, model.time.discBase);
-      const pvC = (t.capitalCost||0) + annCost * annuityFactor(model.time.years, model.time.discBase);
-      const bcr = pvC>0 ? pvB/pvC : NaN;
-      const npv = pvB - pvC;
+      const area = Number(t.area) || 0;
+      const annualCostPerHa = ((Number(t.materialsCost) || 0) + (Number(t.servicesCost) || 0)) || (Number(t.annualCost) || 0);
+      const annualCost = annualCostPerHa * area;
+      const annualBen = m.gm + annualCost;
       return `<tr>
-        <td>${esc(t.name)}${t.id===model.controlTreatmentId?" (control)":""}</td><td>${fmt(area)}</td><td>${fmt(adopt)}</td>
-        <td>${money(annBen)}</td><td>${money(annCost)}</td>
-        <td>${money(pvB)}</td><td>${money(pvC)}</td>
-        <td>${isFinite(bcr)?fmt(bcr):"—"}</td><td>${money(npv)}</td>
+        <td>${esc(t.name)}${t.isControl?" (Control)":""}</td><td>${fmt(area)}</td><td>${fmt(adopt)}</td>
+        <td>${money(annualBen)}</td><td>${money(annualCost)}</td>
+        <td>${money(m.pvBen)}</td><td>${money(m.pvCost)}</td>
+        <td>${isFinite(m.bcr)?fmt(m.bcr):"—"}</td><td>${money(m.npv)}</td>
       </tr>`;
     }).join("");
 
     const benRows = model.benefits.map(b => `
-      <tr><td>${esc(b.label)}</td><td>${esc(b.domain||"")}</td><td>${b.category}</td><td>${b.frequency}</td>
+      <tr><td>${esc(b.label)}</td><td>${b.category}</td><td>${esc(b.theme||"")}</td><td>${b.frequency}</td>
       <td>${b.startYear||""}</td><td>${b.endYear||""}</td><td>${b.year||""}</td>
       <td>${b.unitValue||""}</td><td>${b.quantity||""}</td><td>${b.abatement||""}</td>
       <td>${b.annualAmount||""}</td><td>${b.growthPct||""}</td>
@@ -1769,18 +1844,18 @@
           <div>
             <h2>Project</h2>
             <table>
-              <tr><th>Lead</th><td>${esc(model.project.lead||"")}</td></tr>
-              <tr><th>Team</th><td>${esc(model.project.team||"")}</td></tr>
+              <tr><th>Project lead</th><td>${esc(s.meta.lead)}</td></tr>
               <tr><th>Analysts</th><td>${esc(s.meta.analysts)}</td></tr>
               <tr><th>Organisation</th><td>${esc(s.meta.organisation)}</td></tr>
-              <tr><th>Contact</th><td><a href="mailto:${esc(s.meta.contact)}">${esc(s.meta.contact)}</a></td></tr>
+              <tr><th>Contact</th><td><a href="mailto:${esc(s.meta.contact)}">${esc(s.meta.contact)}</a> ${s.meta.phone?(" / "+esc(s.meta.phone)):""}</td></tr>
               <tr><th>Last Updated</th><td>${esc(s.meta.updated)}</td></tr>
             </table>
           </div>
           <div>
             <h2>Parameters</h2>
             <table>
-              <tr><th>Start Year</th><td>${s.params.startYear}</td></tr>
+              <tr><th>Analysis Start Year</th><td>${s.params.startYear}</td></tr>
+              <tr><th>Project Start Year</th><td>${s.params.projectStartYear}</td></tr>
               <tr><th>Years</th><td>${s.params.years}</td></tr>
               <tr><th>Discount (L/B/H)</th><td>${s.params.discountLow}% / ${s.params.discountBase}% / ${s.params.discountHigh}%</td></tr>
               <tr><th>MIRR (Finance/Reinvest)</th><td>${s.params.mirrFinance}% / ${s.params.mirrReinvest}%</td></tr>
@@ -1817,7 +1892,7 @@
         <h2>Additional benefits</h2>
         <table>
           <thead><tr>
-            <th>Label</th><th>Domain</th><th>Cat</th><th>Freq</th><th>Start</th><th>End</th><th>Year</th>
+            <th>Label</th><th>Cat</th><th>Type</th><th>Freq</th><th>Start</th><th>End</th><th>Year</th>
             <th>UnitValue</th><th>Qty</th><th>Abatement</th><th>Annual</th><th>Growth%</th>
             <th>Adopt?</th><th>Risk?</th><th>P0</th><th>P1</th><th>Consequence</th><th>Notes</th>
           </tr></thead>
@@ -1863,18 +1938,23 @@
   let parsedExcel = null;
 
   async function handleParseExcel() {
-    const file = $("#excelFile").files?.[0];
+    const file = $("#excelFile")?.files?.[0];
     const status = $("#loadStatus");
     const alertBox = $("#validation");
     const preview = $("#preview");
     parsedExcel = null;
-    alertBox.classList.remove("show");
-    alertBox.innerHTML = "";
-    preview.innerHTML = "";
-    $("#importExcel").disabled = true;
+    if (alertBox) {
+      alertBox.classList.remove("show");
+      alertBox.innerHTML = "";
+    }
+    if (preview) preview.innerHTML = "";
+    if ($("#importExcel")) $("#importExcel").disabled = true;
 
-    if (!file) { status.textContent = "Select an Excel/CSV file first."; return; }
-    status.textContent = "Parsing…";
+    if (!file) {
+      if (status) status.textContent = "Select an Excel/CSV file first.";
+      return;
+    }
+    if (status) status.textContent = "Parsing…";
 
     try {
       const buf = await file.arrayBuffer();
@@ -1883,520 +1963,306 @@
         const csvTxt = new TextDecoder().decode(new Uint8Array(buf));
         const ws = XLSX.utils.csv_to_sheet(csvTxt);
         wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, $("#csvSheetType").value || "Outputs");
+        XLSX.utils.book_append_sheet(wb, ws, $("#csvSheetType")?.value || "Outputs");
       } else {
         wb = XLSX.read(buf, { type: "array" });
       }
 
       const getSheet = (name) => {
         const s = wb.Sheets[name];
-        if (!s
-      const getSheet = (name) => {
-        const s = wb.Sheets[name];
         if (!s) return null;
-        return XLSX.utils.sheet_to_json(s, { defval: "" });
+        return XLSX.utils.sheet_to_json(s, { defval: "", raw: true });
       };
 
-      // For CSV uploads we only have one sheet, named by csvSheetType
-      // For XLSX we expect sheets called "Outputs", "Treatments", "Benefits", "OtherCosts"
-      const outputs = getSheet("Outputs");
-      const treatments = getSheet("Treatments");
-      const benefits = getSheet("Benefits");
-      const costs = getSheet("OtherCosts");
-
-      if (
-        (!outputs || !outputs.length) &&
-        (!treatments || !treatments.length) &&
-        (!benefits || !benefits.length) &&
-        (!costs || !costs.length)
-      ) {
-        status.textContent = "No recognised sheets found (Outputs, Treatments, Benefits, OtherCosts).";
-        return;
-      }
+      const outputs = getSheet("Outputs") || [];
+      const treatments = getSheet("Treatments") || getSheet("Treatment") || [];
+      const benefits = getSheet("Benefits") || getSheet("Benefit") || [];
+      const costs = getSheet("Costs") || getSheet("Cost") || [];
 
       parsedExcel = { outputs, treatments, benefits, costs };
 
-      const buildPreviewTable = (title, rows) => {
-        if (!rows || !rows.length) return "";
-        const cols = Object.keys(rows[0] || {});
-        if (!cols.length) return "";
-        let html = `<h4>${esc(title)}</h4><div class="table-wrapper"><table class="preview-table"><thead><tr>`;
-        cols.forEach(c => { html += `<th>${esc(c)}</th>`; });
-        html += "</tr></thead><tbody>";
-        rows.slice(0, 8).forEach(r => {
-          html += "<tr>";
-          cols.forEach(c => {
-            const v = r[c];
-            html += `<td>${esc(v == null ? "" : String(v))}</td>`;
-          });
-          html += "</tr>";
-        });
-        if (rows.length > 8) {
-          html += `<tr><td colspan="${cols.length}" class="muted small">… ${rows.length - 8} more rows not shown</td></tr>`;
+      const issues = [];
+      if (!outputs.length) issues.push("No rows found in sheet “Outputs”. At least one output row is recommended.");
+      if (!treatments.length) issues.push("No rows found in sheet “Treatments”. You can still import outputs, benefits, and costs.");
+      if (!benefits.length) issues.push("No rows found in sheet “Benefits”.");
+      if (!costs.length) issues.push("No rows found in sheet “Costs”.");
+
+      if (alertBox && issues.length) {
+        alertBox.innerHTML = `<ul>${issues.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+        alertBox.classList.add("show");
+      }
+
+      if (preview) {
+        const parts = [];
+        parts.push(`<p><strong>Detected sheets</strong></p>`);
+        parts.push("<ul>");
+        parts.push(`<li>Outputs: ${outputs.length} row(s)</li>`);
+        parts.push(`<li>Treatments: ${treatments.length} row(s)</li>`);
+        parts.push(`<li>Benefits: ${benefits.length} row(s)</li>`);
+        parts.push(`<li>Costs: ${costs.length} row(s)</li>`);
+        parts.push("</ul>");
+
+        const mkTable = (title, rows, maxRows = 3) => {
+          if (!rows.length) return `<h4>${title}</h4><p class="small muted">No rows.</p>`;
+          const cols = Object.keys(rows[0]);
+          const head = cols.map(c => `<th>${esc(c)}</th>`).join("");
+          const body = rows.slice(0, maxRows).map(r =>
+            `<tr>${cols.map(c => `<td>${esc(r[c])}</td>`).join("")}</tr>`
+          ).join("");
+          return `
+            <h4>${title}</h4>
+            <table class="mini">
+              <thead><tr>${head}</tr></thead>
+              <tbody>${body}</tbody>
+            </table>
+          `;
+        };
+
+        parts.push(mkTable("Outputs (preview)", outputs));
+        parts.push(mkTable("Treatments (preview)", treatments));
+        parts.push(mkTable("Benefits (preview)", benefits));
+        parts.push(mkTable("Costs (preview)", costs));
+
+        preview.innerHTML = parts.join("");
+      }
+
+      if (status) {
+        if (!outputs.length && !treatments.length && !benefits.length && !costs.length) {
+          status.textContent = "Parsed file but no recognised sheets found. Expected: Outputs, Treatments, Benefits, Costs.";
+        } else {
+          status.textContent = "File parsed. Review preview then click “Import to model”.";
         }
-        html += "</tbody></table></div>";
-        return html;
-      };
+      }
 
-      let html = "";
-      html += buildPreviewTable("Outputs", outputs);
-      html += buildPreviewTable("Treatments", treatments);
-      html += buildPreviewTable("Benefits", benefits);
-      html += buildPreviewTable("Other costs", costs);
-      preview.innerHTML = html;
-
-      status.textContent = "Parsed successfully. Review the preview and click “Import from Excel” to load.";
-      $("#importExcel").disabled = false;
+      if ($("#importExcel") && (outputs.length || treatments.length || benefits.length || costs.length)) {
+        $("#importExcel").disabled = false;
+      }
     } catch (err) {
-      console.error(err);
-      status.textContent = "Failed to parse file.";
-      alertBox.classList.add("show");
-      alertBox.innerHTML = `<p class="error">Parsing error: ${esc(err?.message || err)}</p>`;
+      if (status) status.textContent = "Could not parse file.";
+      if (alertBox) {
+        alertBox.innerHTML = `<p class="error">Error: ${esc(err?.message || String(err))}</p>`;
+        alertBox.classList.add("show");
+      }
     }
   }
 
   function commitExcelToModel() {
-    const status = $("#loadStatus");
-    const alertBox = $("#validation");
-    alertBox.classList.remove("show");
-    alertBox.innerHTML = "";
-
     if (!parsedExcel) {
-      alertBox.classList.add("show");
-      alertBox.innerHTML = "<p class='error'>Parse an Excel or CSV file first.</p>";
+      alert("No parsed Excel data. Parse a file first.");
       return;
     }
-
     const { outputs, treatments, benefits, costs } = parsedExcel;
+    const toBool = v => {
+      const s = String(v).trim().toLowerCase();
+      return s === "true" || s === "yes" || s === "y" || s === "1" || s === "t";
+    };
 
-    // ----- Outputs -----
     if (outputs && outputs.length) {
-      model.outputs = outputs.map((r, idx) => {
-        const id = uid();
-        const name =
-          r.Name ?? r.Output ?? r.output ?? r.name ?? `Output ${idx + 1}`;
-        const unit = r.Unit ?? r.unit ?? "";
-        const valueRaw =
-          r["$/unit"] ?? r.Value ?? r.value ?? r.Price ?? r.price ?? 0;
-        const value = Number(valueRaw) || 0;
-        const source =
-          r.Source ?? r.source ?? "Input Directly";
-
-        return {
-          id,
-          name: String(name),
-          unit: String(unit),
-          value,
-          source: String(source)
-        };
-      });
-
-      // Rebuild treatment deltas structure to align with new outputs
-      model.treatments.forEach(t => {
-        const newDeltas = {};
-        model.outputs.forEach(o => {
-          newDeltas[o.id] = t.deltas?.[o.id] ?? 0;
-        });
-        t.deltas = newDeltas;
-      });
+      model.outputs = outputs.map(row => ({
+        id: uid(),
+        name: row.Name || row.Output || row.output || "",
+        unit: row.Unit || row.UnitOfMeasure || row.Unit_ || "",
+        value: Number(row.ValuePerUnit ?? row.Value ?? row["$/unit"] ?? 0) || 0,
+        source: row.Source || "Input Directly"
+      }));
     }
 
-    // ----- Treatments -----
     if (treatments && treatments.length) {
-      const newTreatments = treatments.map((r, idx) => {
-        const id = uid();
-        const name =
-          r.Treatment ?? r.Name ?? r.name ?? `Treatment ${idx + 1}`;
-        const area = Number(r.Area ?? r.area ?? 0) || 0;
-        const replications = Number(r.Replications ?? r.replications ?? 1) || 1;
-        const adoption = Number(r.Adoption ?? r.adoption ?? 0.7) || 0;
-        const annualCost =
-          Number(
-            r.AnnualCost ??
-            r["AnnualCost($/ha)"] ??
-            r["Annual cost ($/ha)"] ??
-            r.annualCost ??
-            0
-          ) || 0;
-        const materialsCost =
-          Number(r.MaterialsCost ?? r.materialsCost ?? 0) || 0;
-        const servicesCost =
-          Number(r.ServicesCost ?? r.servicesCost ?? 0) || 0;
-        const capitalCost =
-          Number(r.CapitalCost ?? r.capitalCost ?? 0) || 0;
-
-        const constrainedRaw =
-          r.Constrained ?? r.constrained ?? "Yes";
-        const constrainedStr = String(constrainedRaw).toLowerCase();
-        const constrained =
-          constrainedStr === "true" ||
-          constrainedStr === "yes" ||
-          constrainedStr === "y" ||
-          constrainedStr === "1";
-
-        const source =
-          r.Source ?? r.source ?? "Input Directly";
-
-        const t = {
-          id,
-          name: String(name),
-          area,
-          replications,
-          adoption,
-          deltas: {},
-          annualCost,
-          materialsCost,
-          servicesCost,
-          capitalCost,
-          constrained,
-          source: String(source),
-          isControl: false,
-          useDepreciation: false,
-          deprMethod: "sl",
-          deprLife: 5,
-          deprRate: 20
-        };
-
-        // Map any delta columns of form d:OutputName or Delta:OutputName
-        if (model.outputs && model.outputs.length) {
-          model.outputs.forEach(o => {
-            const k1 = `d:${o.name}`;
-            const k2 = `delta:${o.name}`;
-            const k3 = `Delta_${o.name}`;
-            const v =
-              Number(r[k1] ?? r[k2] ?? r[k3] ?? 0) || 0;
-            t.deltas[o.id] = v;
-          });
-        }
-
-        return t;
-      });
-
-      model.treatments = newTreatments;
-      if (model.treatments.length) {
-        model.controlTreatmentId = model.treatments[0].id;
-        model.treatments.forEach((t, i) => {
-          t.isControl = (i === 0);
-        });
-      }
+      model.treatments = treatments.map(row => ({
+        id: uid(),
+        name: row.Name || row.Treatment || "",
+        area: Number(row.AreaHa ?? row.Area ?? 0) || 0,
+        adoption: Number(row.Adoption_0to1 ?? row.Adoption ?? 0.5) || 0,
+        deltas: {},
+        annualCost: Number(row.AnnualCost_perHa ?? row.AnnualCost ?? 0) || 0,
+        materialsCost: Number(row.MaterialsCost_perHa ?? row.MaterialsCost ?? 0) || 0,
+        servicesCost: Number(row.ServicesCost_perHa ?? row.ServicesCost ?? 0) || 0,
+        capitalCost: Number(row.CapitalCost_y0 ?? row.CapitalCost ?? 0) || 0,
+        constrained: row.Constrained_trueFalse !== undefined ? toBool(row.Constrained_trueFalse) : true,
+        source: row.Source || "Input Directly",
+        replications: Number(row.Replications ?? 1) || 1,
+        isControl: row.IsControl_trueFalse !== undefined ? toBool(row.IsControl_trueFalse) : false,
+        notes: row.Notes || ""
+      }));
     }
 
-    // ----- Benefits -----
     if (benefits && benefits.length) {
-      model.benefits = benefits.map(r => {
-        const linkAdoptRaw = r.LinkAdoption ?? r.linkAdoption ?? "true";
-        const linkAdoptStr = String(linkAdoptRaw).toLowerCase();
-        const linkAdoption =
-          linkAdoptStr === "true" ||
-          linkAdoptStr === "yes" ||
-          linkAdoptStr === "y" ||
-          linkAdoptStr === "1";
-
-        const linkRiskRaw = r.LinkRisk ?? r.linkRisk ?? "true";
-        const linkRiskStr = String(linkRiskRaw).toLowerCase();
-        const linkRisk =
-          linkRiskStr === "true" ||
-          linkRiskStr === "yes" ||
-          linkRiskStr === "y" ||
-          linkRiskStr === "1";
-
-        return {
-          id: uid(),
-          label: r.Label ?? r.label ?? "",
-          domain: r.Domain ?? r.domain ?? "Other",
-          category: r.Category ?? r.category ?? "C4",
-          frequency: r.Frequency ?? r.frequency ?? "Annual",
-          startYear:
-            Number(r.StartYear ?? r.startYear ?? model.time.startYear) ||
-            model.time.startYear,
-          endYear:
-            Number(r.EndYear ?? r.endYear ?? model.time.startYear) ||
-            model.time.startYear,
-          year:
-            Number(r.Year ?? r.year ?? model.time.startYear) ||
-            model.time.startYear,
-          unitValue:
-            Number(r.UnitValue ?? r.unitValue ?? 0) || 0,
-          quantity:
-            Number(r.Quantity ?? r.quantity ?? 0) || 0,
-          abatement:
-            Number(r.Abatement ?? r.abatement ?? 0) || 0,
-          annualAmount:
-            Number(r.AnnualAmount ?? r.annualAmount ?? 0) || 0,
-          growthPct:
-            Number(r.GrowthPct ?? r.growthPct ?? 0) || 0,
-          linkAdoption,
-          linkRisk,
-          p0: Number(r.P0 ?? r.p0 ?? 0) || 0,
-          p1: Number(r.P1 ?? r.p1 ?? 0) || 0,
-          consequence:
-            Number(r.Consequence ?? r.consequence ?? 0) || 0,
-          notes: r.Notes ?? r.notes ?? ""
-        };
-      });
+      model.benefits = benefits.map(row => ({
+        id: uid(),
+        label: row.Label || "",
+        category: row.Category || "C4",
+        theme: row.Theme || row.BenefitType || "Other",
+        frequency: row.Frequency || "Annual",
+        startYear: Number(row.StartYear ?? model.time.startYear) || model.time.startYear,
+        endYear: Number(row.EndYear ?? row.StartYear ?? model.time.startYear) || model.time.startYear,
+        year: Number(row.YearOnce ?? row.Year ?? row.StartYear ?? model.time.startYear) || model.time.startYear,
+        unitValue: Number(row.UnitValue ?? 0) || 0,
+        quantity: Number(row.Quantity ?? 0) || 0,
+        abatement: Number(row.Abatement ?? 0) || 0,
+        annualAmount: Number(row.AnnualAmount ?? 0) || 0,
+        growthPct: Number(row.GrowthPct ?? 0) || 0,
+        linkAdoption: row.LinkAdoption_trueFalse !== undefined ? toBool(row.LinkAdoption_trueFalse) : true,
+        linkRisk: row.LinkRisk_trueFalse !== undefined ? toBool(row.LinkRisk_trueFalse) : true,
+        p0: Number(row.P0 ?? 0) || 0,
+        p1: Number(row.P1 ?? 0) || 0,
+        consequence: Number(row.Consequence ?? 0) || 0,
+        notes: row.Notes || ""
+      }));
     }
 
-    // ----- Other costs -----
     if (costs && costs.length) {
-      model.otherCosts = costs.map(r => {
-        const typeRaw = r.Type ?? r.type ?? "annual";
-        const typeStr = String(typeRaw).toLowerCase();
-        const type = typeStr === "capital" ? "capital" : "annual";
-
-        const cat = r.CostCategory ?? r.costCategory ?? "other";
-
-        const constrainedRaw = r.Constrained ?? r.constrained ?? "true";
-        const constrainedStr = String(constrainedRaw).toLowerCase();
-        const constrained =
-          constrainedStr === "true" ||
-          constrainedStr === "yes" ||
-          constrainedStr === "y" ||
-          constrainedStr === "1";
-
-        return {
-          id: uid(),
-          label: r.Label ?? r.label ?? "",
-          type,
-          costCategory: cat,
-          annual:
-            Number(r.Annual ?? r.annual ?? 0) || 0,
-          startYear:
-            Number(r.StartYear ?? r.startYear ?? model.time.startYear) ||
-            model.time.startYear,
-          endYear:
-            Number(r.EndYear ?? r.endYear ?? model.time.startYear) ||
-            model.time.startYear,
-          capital:
-            Number(r.Capital ?? r.capital ?? 0) || 0,
-          year:
-            Number(r.Year ?? r.year ?? model.time.startYear) ||
-            model.time.startYear,
-          constrained,
-          useDepreciation: false,
-          deprMethod: "sl",
-          deprLife: 5,
-          deprRate: 20
-        };
-      });
+      model.otherCosts = costs.map(row => ({
+        id: uid(),
+        label: row.Label || "",
+        type: (row.Type_annualCapital || row.Type || "annual").toString().toLowerCase().startsWith("cap") ? "capital" : "annual",
+        category: row.Category || "Labour",
+        annual: Number(row.Annual ?? 0) || 0,
+        startYear: Number(row.StartYear ?? model.time.startYear) || model.time.startYear,
+        endYear: Number(row.EndYear ?? row.StartYear ?? model.time.startYear) || model.time.startYear,
+        capital: Number(row.Capital ?? 0) || 0,
+        year: Number(row.CapitalYear ?? row.Year ?? model.time.startYear) || model.time.startYear,
+        constrained: row.Constrained_trueFalse !== undefined ? toBool(row.Constrained_trueFalse) : true,
+        depMethod: (row.DepMethod || "none").toString().toLowerCase().startsWith("str") ? "straight"
+          : (row.DepMethod || "none").toString().toLowerCase().startsWith("dec") ? "declining"
+          : "none",
+        depLife: Number(row.DepLife ?? 5) || 5,
+        depRate: Number(row.DepRate ?? 30) || 30
+      }));
     }
+
+    // Reset deltas for all treatments against current outputs
+    initTreatmentDeltas();
 
     renderAll();
+    setBasicsFieldsFromModel();
     calcAndRender();
-    status.textContent = "Imported successfully from Excel/CSV.";
+
+    if ($("#loadStatus")) $("#loadStatus").textContent = "Imported data from file into the model.";
+    if ($("#importExcel")) $("#importExcel").disabled = true;
   }
 
   function downloadExcelTemplate() {
     if (!window.XLSX) {
-      alert("SheetJS (XLSX) library is not loaded. Cannot create template.");
+      alert("SheetJS (XLSX) library not loaded.");
       return;
     }
     const wb = XLSX.utils.book_new();
 
-    // Outputs sheet
-    const outputsAoA = [
-      ["Name", "Unit", "$/unit", "Source"]
+    const outRows = [
+      ["Name","Unit","ValuePerUnit","Source"],
+      ["Yield","t/ha","","Input Directly"],
+      ["Protein","%-point","","Input Directly"],
+      ["Moisture","%-point","","Input Directly"],
+      ["Biomass","t/ha","","Input Directly"]
     ];
-    const wsOut = XLSX.utils.aoa_to_sheet(outputsAoA);
+    const wsOut = XLSX.utils.aoa_to_sheet(outRows);
     XLSX.utils.book_append_sheet(wb, wsOut, "Outputs");
 
-    // Treatments sheet
-    const treatsAoA = [
-      [
-        "Name",
-        "Area",
-        "Replications",
-        "Adoption",
-        "AnnualCost",
-        "MaterialsCost",
-        "ServicesCost",
-        "CapitalCost",
-        "Constrained",
-        "Source"
-      ]
+    const treatRows = [
+      ["Name","AreaHa","Adoption_0to1","MaterialsCost_perHa","ServicesCost_perHa","AnnualCost_perHa","CapitalCost_y0","Constrained_trueFalse","Source","Replications","IsControl_trueFalse","Notes"],
+      ["Optimized N (Rate+Timing)",300,0.8,0,0,45,5000,"TRUE","Farm Trials",1,"FALSE",""],
+      ["Slow-Release N",200,0.7,0,0,25,0,"TRUE","ABARES",1,"FALSE",""]
     ];
-    const wsTr = XLSX.utils.aoa_to_sheet(treatsAoA);
+    const wsTr = XLSX.utils.aoa_to_sheet(treatRows);
     XLSX.utils.book_append_sheet(wb, wsTr, "Treatments");
 
-    // Benefits sheet
-    const benAoA = [[
-      "Label",
-      "Domain",
-      "Category",
-      "Frequency",
-      "StartYear",
-      "EndYear",
-      "Year",
-      "UnitValue",
-      "Quantity",
-      "Abatement",
-      "AnnualAmount",
-      "GrowthPct",
-      "LinkAdoption",
-      "LinkRisk",
-      "P0",
-      "P1",
-      "Consequence",
-      "Notes"
-    ]];
-    const wsBen = XLSX.utils.aoa_to_sheet(benAoA);
+    const benRows = [
+      ["Label","Category","Theme","Frequency","StartYear","EndYear","YearOnce","UnitValue","Quantity","Abatement","AnnualAmount","GrowthPct","LinkAdoption_trueFalse","LinkRisk_trueFalse","P0","P1","Consequence","Notes"],
+      ["Reduced recurring costs (energy/water)","C4","Cost savings","Annual",model.time.startYear,model.time.startYear+4,"",0,0,0,15000,0,"TRUE","TRUE",0,0,0,"Project-wide OPEX saving"],
+      ["Reduced risk of quality downgrades","C7","Risk reduction","Annual",model.time.startYear,model.time.startYear+9,"",0,0,0,0,0,"TRUE","FALSE",0.1,0.07,120000,""],
+      ["Soil asset value uplift (carbon/structure)","C6","Soil carbon","Once",model.time.startYear,model.time.startYear,model.time.startYear+5,0,0,0,50000,0,"FALSE","TRUE",0,0,0,""]
+    ];
+    const wsBen = XLSX.utils.aoa_to_sheet(benRows);
     XLSX.utils.book_append_sheet(wb, wsBen, "Benefits");
 
-    // OtherCosts sheet
-    const costAoA = [[
-      "Label",
-      "Type",
-      "CostCategory",
-      "Annual",
-      "StartYear",
-      "EndYear",
-      "Capital",
-      "Year",
-      "Constrained"
-    ]];
-    const wsCost = XLSX.utils.aoa_to_sheet(costAoA);
-    XLSX.utils.book_append_sheet(wb, wsCost, "OtherCosts");
+    const costRows = [
+      ["Label","Type_annualCapital","Category","Annual","StartYear","EndYear","Capital","CapitalYear","DepMethod","DepLife","DepRate","Constrained_trueFalse"],
+      ["Project Mgmt & M&E","annual","Services",20000,model.time.startYear,model.time.startYear+4,0,model.time.startYear,"none",5,30,"TRUE"]
+    ];
+    const wsCost = XLSX.utils.aoa_to_sheet(costRows);
+    XLSX.utils.book_append_sheet(wb, wsCost, "Costs");
 
-    saveWorkbook("cba_excel_template.xlsx", wb);
+    saveWorkbook("cba_template.xlsx", wb);
   }
 
   function downloadSampleDataset() {
     if (!window.XLSX) {
-      alert("SheetJS (XLSX) library is not loaded. Cannot create sample workbook.");
+      alert("SheetJS (XLSX) library not loaded.");
       return;
     }
-
     const wb = XLSX.utils.book_new();
 
-    // Sample Outputs from current model
-    const outAoA = [["Name", "Unit", "$/unit", "Source"]];
+    const outRows = [["Name","Unit","ValuePerUnit","Source"]];
     model.outputs.forEach(o => {
-      outAoA.push([o.name, o.unit, o.value, o.source]);
+      outRows.push([o.name, o.unit, o.value, o.source]);
     });
-    const wsOut = XLSX.utils.aoa_to_sheet(outAoA);
+    const wsOut = XLSX.utils.aoa_to_sheet(outRows);
     XLSX.utils.book_append_sheet(wb, wsOut, "Outputs");
 
-    // Sample Treatments
-    const trAoA = [[
-      "Name",
-      "Area",
-      "Replications",
-      "Adoption",
-      "AnnualCost",
-      "MaterialsCost",
-      "ServicesCost",
-      "CapitalCost",
-      "Constrained",
-      "Source"
-    ]];
+    const treatRows = [["Name","AreaHa","Adoption_0to1","MaterialsCost_perHa","ServicesCost_perHa","AnnualCost_perHa","CapitalCost_y0","Constrained_trueFalse","Source","Replications","IsControl_trueFalse","Notes"]];
     model.treatments.forEach(t => {
-      trAoA.push([
+      treatRows.push([
         t.name,
         t.area,
-        t.replications,
         t.adoption,
-        t.annualCost,
-        t.materialsCost,
-        t.servicesCost,
-        t.capitalCost,
-        t.constrained ? "Yes" : "No",
-        t.source
+        t.materialsCost || 0,
+        t.servicesCost || 0,
+        t.annualCost || 0,
+        t.capitalCost || 0,
+        t.constrained ? "TRUE" : "FALSE",
+        t.source || "Input Directly",
+        t.replications || 1,
+        t.isControl ? "TRUE" : "FALSE",
+        t.notes || ""
       ]);
     });
-    const wsTr = XLSX.utils.aoa_to_sheet(trAoA);
+    const wsTr = XLSX.utils.aoa_to_sheet(treatRows);
     XLSX.utils.book_append_sheet(wb, wsTr, "Treatments");
 
-    // Sample Benefits
-    const benAoA = [[
-      "Label",
-      "Domain",
-      "Category",
-      "Frequency",
-      "StartYear",
-      "EndYear",
-      "Year",
-      "UnitValue",
-      "Quantity",
-      "Abatement",
-      "AnnualAmount",
-      "GrowthPct",
-      "LinkAdoption",
-      "LinkRisk",
-      "P0",
-      "P1",
-      "Consequence",
-      "Notes"
-    ]];
+    const benRows = [["Label","Category","Theme","Frequency","StartYear","EndYear","YearOnce","UnitValue","Quantity","Abatement","AnnualAmount","GrowthPct","LinkAdoption_trueFalse","LinkRisk_trueFalse","P0","P1","Consequence","Notes"]];
     model.benefits.forEach(b => {
-      benAoA.push([
-        b.label,
-        b.domain,
-        b.category,
-        b.frequency,
-        b.startYear,
-        b.endYear,
-        b.year,
-        b.unitValue,
-        b.quantity,
-        b.abatement,
-        b.annualAmount,
-        b.growthPct,
-        b.linkAdoption,
-        b.linkRisk,
-        b.p0,
-        b.p1,
-        b.consequence,
-        b.notes
+      benRows.push([
+        b.label, b.category, b.theme || "", b.frequency,
+        b.startYear, b.endYear, b.year,
+        b.unitValue, b.quantity, b.abatement,
+        b.annualAmount, b.growthPct,
+        b.linkAdoption ? "TRUE" : "FALSE",
+        b.linkRisk ? "TRUE" : "FALSE",
+        b.p0, b.p1, b.consequence, b.notes || ""
       ]);
     });
-    const wsBen = XLSX.utils.aoa_to_sheet(benAoA);
+    const wsBen = XLSX.utils.aoa_to_sheet(benRows);
     XLSX.utils.book_append_sheet(wb, wsBen, "Benefits");
 
-    // Sample OtherCosts
-    const costAoA = [[
-      "Label",
-      "Type",
-      "CostCategory",
-      "Annual",
-      "StartYear",
-      "EndYear",
-      "Capital",
-      "Year",
-      "Constrained"
-    ]];
+    const costRows = [["Label","Type_annualCapital","Category","Annual","StartYear","EndYear","Capital","CapitalYear","DepMethod","DepLife","DepRate","Constrained_trueFalse"]];
     model.otherCosts.forEach(c => {
-      costAoA.push([
+      costRows.push([
         c.label,
-        c.type,
-        c.costCategory,
-        c.annual,
+        c.type === "capital" ? "capital" : "annual",
+        c.category,
+        c.annual || 0,
         c.startYear,
         c.endYear,
-        c.capital,
+        c.capital || 0,
         c.year,
-        c.constrained ? "Yes" : "No"
+        c.depMethod || "none",
+        c.depLife || 5,
+        c.depRate || 30,
+        c.constrained ? "TRUE" : "FALSE"
       ]);
     });
-    const wsCost = XLSX.utils.aoa_to_sheet(costAoA);
-    XLSX.utils.book_append_sheet(wb, wsCost, "OtherCosts");
+    const wsCost = XLSX.utils.aoa_to_sheet(costRows);
+    XLSX.utils.book_append_sheet(wb, wsCost, "Costs");
 
-    saveWorkbook(`cba_sample_${slug(model.project.name || "project")}.xlsx`, wb);
+    saveWorkbook(`cba_sample_${slug(model.project.name)}.xlsx`, wb);
   }
 
   // ---------- INIT ----------
   document.addEventListener("DOMContentLoaded", () => {
-    try {
-      initTabs();
-      initActions();
-      bindBasics();
-      renderAll();
-      calcAndRender();
-    } catch (err) {
-      console.error("Initialisation error:", err);
-      const alertBox = $("#validation");
-      if (alertBox) {
-        alertBox.classList.add("show");
-        alertBox.innerHTML = `<p class="error">Initialisation error: ${esc(err?.message || err)}</p>`;
-      }
-    }
+    initTabs();
+    initActions();
+    bindBasics();
+    renderAll();
+    calcAndRender();
   });
 })();
