@@ -552,6 +552,8 @@
       p.classList.toggle("show", show);
       p.hidden = !show;
       p.setAttribute("aria-hidden", show ? "false" : "true");
+      // Hard-override display so tabs work even if CSS is different
+      p.style.display = show ? "" : "none";
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -963,6 +965,92 @@
     }
   }
 
+  // Initialise add buttons AFTER DOM is ready
+  function initAddButtons() {
+    const addOutputBtn = $("#addOutput");
+    if (addOutputBtn) {
+      addOutputBtn.addEventListener("click", () => {
+        const id = uid();
+        model.outputs.push({
+          id,
+          name: "Custom output",
+          unit: "unit",
+          value: 0,
+          source: "Input Directly"
+        });
+        model.treatments.forEach(t => {
+          t.deltas[id] = 0;
+        });
+        renderOutputs();
+        renderTreatments();
+        renderDatabaseTags();
+        calcAndRender();
+      });
+    }
+
+    const addTreatmentBtn = $("#addTreatment");
+    if (addTreatmentBtn) {
+      addTreatmentBtn.addEventListener("click", () => {
+        if (model.treatments.length >= 64) {
+          alert("Maximum of 64 treatments reached.");
+          return;
+        }
+        const t = {
+          id: uid(),
+          name: "New treatment",
+          area: 0,
+          adoption: 0.5,
+          deltas: {},
+          annualCost: 0,
+          materialsCost: 0,
+          servicesCost: 0,
+          capitalCost: 0,
+          constrained: true,
+          source: "Input Directly",
+          replications: 1,
+          isControl: false,
+          notes: ""
+        };
+        model.outputs.forEach(o => {
+          t.deltas[o.id] = 0;
+        });
+        model.treatments.push(t);
+        renderTreatments();
+        renderDatabaseTags();
+        calcAndRender();
+      });
+    }
+
+    const addBenefitBtn = $("#addBenefit");
+    if (addBenefitBtn) {
+      addBenefitBtn.addEventListener("click", () => {
+        model.benefits.push({
+          id: uid(),
+          label: "New benefit",
+          category: "C4",
+          theme: "Other",
+          frequency: "Annual",
+          startYear: model.time.startYear,
+          endYear: model.time.startYear,
+          year: model.time.startYear,
+          unitValue: 0,
+          quantity: 0,
+          abatement: 0,
+          annualAmount: 0,
+          growthPct: 0,
+          linkAdoption: true,
+          linkRisk: true,
+          p0: 0,
+          p1: 0,
+          consequence: 0,
+          notes: ""
+        });
+        renderBenefits();
+        calcAndRender();
+      });
+    }
+  }
+
   // ---------- RENDERERS ----------
   function renderOutputs() {
     const root = $("#outputsList");
@@ -1022,26 +1110,6 @@
     renderTreatments();
     renderDatabaseTags();
     calcAndRender();
-  }
-
-  const addOutputBtn = $("#addOutput");
-  if (addOutputBtn) {
-    addOutputBtn.addEventListener("click", () => {
-      const id = uid();
-      model.outputs.push({
-        id,
-        name: "Custom output",
-        unit: "unit",
-        value: 0,
-        source: "Input Directly"
-      });
-      model.treatments.forEach(t => {
-        t.deltas[id] = 0;
-      });
-      renderOutputs();
-      renderTreatments();
-      renderDatabaseTags();
-    });
   }
 
   function renderTreatments() {
@@ -1150,38 +1218,6 @@
     });
   }
 
-  const addTreatmentBtn = $("#addTreatment");
-  if (addTreatmentBtn) {
-    addTreatmentBtn.addEventListener("click", () => {
-      if (model.treatments.length >= 64) {
-        alert("Maximum of 64 treatments reached.");
-        return;
-      }
-      const t = {
-        id: uid(),
-        name: "New treatment",
-        area: 0,
-        adoption: 0.5,
-        deltas: {},
-        annualCost: 0,
-        materialsCost: 0,
-        servicesCost: 0,
-        capitalCost: 0,
-        constrained: true,
-        source: "Input Directly",
-        replications: 1,
-        isControl: false,
-        notes: ""
-      };
-      model.outputs.forEach(o => {
-        t.deltas[o.id] = 0;
-      });
-      model.treatments.push(t);
-      renderTreatments();
-      renderDatabaseTags();
-    });
-  }
-
   function renderBenefits() {
     const root = $("#benefitsList");
     if (!root) return;
@@ -1279,34 +1315,6 @@
       model.benefits = model.benefits.filter(x => x.id !== id);
       renderBenefits();
       calcAndRender();
-    });
-  }
-
-  const addBenefitBtn = $("#addBenefit");
-  if (addBenefitBtn) {
-    addBenefitBtn.addEventListener("click", () => {
-      model.benefits.push({
-        id: uid(),
-        label: "New benefit",
-        category: "C4",
-        theme: "Other",
-        frequency: "Annual",
-        startYear: model.time.startYear,
-        endYear: model.time.startYear,
-        year: model.time.startYear,
-        unitValue: 0,
-        quantity: 0,
-        abatement: 0,
-        annualAmount: 0,
-        growthPct: 0,
-        linkAdoption: true,
-        linkRisk: true,
-        p0: 0,
-        p1: 0,
-        consequence: 0,
-        notes: ""
-      });
-      renderBenefits();
     });
   }
 
@@ -3034,7 +3042,7 @@
   function buildCopilotPrompt() {
     const s = buildSummaryForCsv();
     const rate = model.time.discBase;
-       const adoptMul = model.adoption.base;
+    const adoptMul = model.adoption.base;
     const risk = model.risk.base;
 
     const treatmentLines = model.treatments
@@ -3143,6 +3151,7 @@ Your task:
     initTabs();
     bindBasics();
     renderAll();
+    initAddButtons();
     calcAndRender();
   });
 })();
