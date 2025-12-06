@@ -215,8 +215,8 @@
         ? n.toLocaleString(undefined, { maximumFractionDigits: 0 })
         : n.toLocaleString(undefined, { maximumFractionDigits: 2 })
       : "n/a";
-  const money = n => (isFinite(n) ? "$" + fmt(n) : "n/a";
-  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a";
+  const money = n => (isFinite(n) ? "$" + fmt(n) : "n/a");
+  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a");
   const slug = s =>
     (s || "project")
       .toLowerCase()
@@ -526,15 +526,17 @@
   };
 
   // Robust tab switcher that works with:
-  // - any element with [data-tab] as nav
+  // - any element with [data-tab], [data-tab-target], or [data-tab-jump] as nav
   // - panels using id="tab-<name>", id="<name>", or data-tab-panel="<name>"
   function switchTab(target) {
     if (!target) return;
 
-    const navEls = $$("[data-tab]");
+    const navEls = $$("[data-tab],[data-tab-target],[data-tab-jump]");
     navEls.forEach(el => {
-      el.classList.toggle("active", el.dataset.tab === target);
-      el.setAttribute("aria-selected", el.dataset.tab === target ? "true" : "false");
+      const key = el.dataset.tab || el.dataset.tabTarget || el.dataset.tabJump;
+      const isActive = key === target;
+      el.classList.toggle("active", isActive);
+      el.setAttribute("aria-selected", isActive ? "true" : "false");
     });
 
     const panels = $$(".tab-panel");
@@ -569,18 +571,30 @@
       switchTab(target);
     });
 
-    // Initial tab selection: prefer nav element marked active, otherwise first nav, otherwise first panel
-    const activeNav = document.querySelector("[data-tab].active") || document.querySelector("[data-tab]");
+    // Initial tab selection:
+    // 1. Any nav (data-tab / data-tab-target / data-tab-jump) marked .active
+    // 2. Otherwise first nav
+    // 3. Otherwise first panel
+    const activeNav =
+      document.querySelector("[data-tab].active, [data-tab-target].active, [data-tab-jump].active") ||
+      document.querySelector("[data-tab], [data-tab-target], [data-tab-jump]");
     if (activeNav) {
-      switchTab(activeNav.dataset.tab);
-    } else {
-      const firstPanel = document.querySelector(".tab-panel");
-      if (firstPanel) {
-        const key =
-          firstPanel.dataset.tabPanel ||
-          (firstPanel.id ? firstPanel.id.replace(/^tab-/, "") : "");
-        if (key) switchTab(key);
+      const target =
+        activeNav.dataset.tab ||
+        activeNav.dataset.tabTarget ||
+        activeNav.dataset.tabJump;
+      if (target) {
+        switchTab(target);
+        return;
       }
+    }
+
+    const firstPanel = document.querySelector(".tab-panel");
+    if (firstPanel) {
+      const key =
+        firstPanel.dataset.tabPanel ||
+        (firstPanel.id ? firstPanel.id.replace(/^tab-/, "") : "");
+      if (key) switchTab(key);
     }
   }
 
@@ -599,56 +613,56 @@
 
   // ---------- BIND + RENDER FORMS ----------
   function setBasicsFieldsFromModel() {
-    $("#projectName").value = model.project.name || "";
-    $("#projectLead").value = model.project.lead || "";
-    $("#analystNames").value = model.project.analysts || "";
-    $("#projectTeam").value = model.project.team || "";
-    $("#projectSummary").value = model.project.summary || "";
-    $("#projectObjectives").value = model.project.objectives || "";
-    $("#projectActivities").value = model.project.activities || "";
-    $("#stakeholderGroups").value = model.project.stakeholders || "";
-    $("#lastUpdated").value = model.project.lastUpdated || "";
-    $("#projectGoal").value = model.project.goal || "";
-    $("#withProject").value = model.project.withProject || "";
-    $("#withoutProject").value = model.project.withoutProject || "";
-    $("#organisation").value = model.project.organisation || "";
-    $("#contactEmail").value = model.project.contactEmail || "";
-    $("#contactPhone").value = model.project.contactPhone || "";
+    if ($("#projectName")) $("#projectName").value = model.project.name || "";
+    if ($("#projectLead")) $("#projectLead").value = model.project.lead || "";
+    if ($("#analystNames")) $("#analystNames").value = model.project.analysts || "";
+    if ($("#projectTeam")) $("#projectTeam").value = model.project.team || "";
+    if ($("#projectSummary")) $("#projectSummary").value = model.project.summary || "";
+    if ($("#projectObjectives")) $("#projectObjectives").value = model.project.objectives || "";
+    if ($("#projectActivities")) $("#projectActivities").value = model.project.activities || "";
+    if ($("#stakeholderGroups")) $("#stakeholderGroups").value = model.project.stakeholders || "";
+    if ($("#lastUpdated")) $("#lastUpdated").value = model.project.lastUpdated || "";
+    if ($("#projectGoal")) $("#projectGoal").value = model.project.goal || "";
+    if ($("#withProject")) $("#withProject").value = model.project.withProject || "";
+    if ($("#withoutProject")) $("#withoutProject").value = model.project.withoutProject || "";
+    if ($("#organisation")) $("#organisation").value = model.project.organisation || "";
+    if ($("#contactEmail")) $("#contactEmail").value = model.project.contactEmail || "";
+    if ($("#contactPhone")) $("#contactPhone").value = model.project.contactPhone || "";
 
-    $("#startYear").value = model.time.startYear;
-    $("#projectStartYear").value = model.time.projectStartYear || model.time.startYear;
-    $("#years").value = model.time.years;
-    $("#discBase").value = model.time.discBase;
-    $("#discLow").value = model.time.discLow;
-    $("#discHigh").value = model.time.discHigh;
-    $("#mirrFinance").value = model.time.mirrFinance;
-    $("#mirrReinvest").value = model.time.mirrReinvest;
+    if ($("#startYear")) $("#startYear").value = model.time.startYear;
+    if ($("#projectStartYear")) $("#projectStartYear").value = model.time.projectStartYear || model.time.startYear;
+    if ($("#years")) $("#years").value = model.time.years;
+    if ($("#discBase")) $("#discBase").value = model.time.discBase;
+    if ($("#discLow")) $("#discLow").value = model.time.discLow;
+    if ($("#discHigh")) $("#discHigh").value = model.time.discHigh;
+    if ($("#mirrFinance")) $("#mirrFinance").value = model.time.mirrFinance;
+    if ($("#mirrReinvest")) $("#mirrReinvest").value = model.time.mirrReinvest;
 
-    $("#adoptBase").value = model.adoption.base;
-    $("#adoptLow").value = model.adoption.low;
-    $("#adoptHigh").value = model.adoption.high;
+    if ($("#adoptBase")) $("#adoptBase").value = model.adoption.base;
+    if ($("#adoptLow")) $("#adoptLow").value = model.adoption.low;
+    if ($("#adoptHigh")) $("#adoptHigh").value = model.adoption.high;
 
-    $("#riskBase").value = model.risk.base;
-    $("#riskLow").value = model.risk.low;
-    $("#riskHigh").value = model.risk.high;
-    $("#rTech").value = model.risk.tech;
-    $("#rNonCoop").value = model.risk.nonCoop;
-    $("#rSocio").value = model.risk.socio;
-    $("#rFin").value = model.risk.fin;
-    $("#rMan").value = model.risk.man;
+    if ($("#riskBase")) $("#riskBase").value = model.risk.base;
+    if ($("#riskLow")) $("#riskLow").value = model.risk.low;
+    if ($("#riskHigh")) $("#riskHigh").value = model.risk.high;
+    if ($("#rTech")) $("#rTech").value = model.risk.tech;
+    if ($("#rNonCoop")) $("#rNonCoop").value = model.risk.nonCoop;
+    if ($("#rSocio")) $("#rSocio").value = model.risk.socio;
+    if ($("#rFin")) $("#rFin").value = model.risk.fin;
+    if ($("#rMan")) $("#rMan").value = model.risk.man;
 
-    $("#simN").value = model.sim.n;
-    $("#targetBCR").value = model.sim.targetBCR;
-    $("#bcrMode").value = model.sim.bcrMode;
-    $("#simBcrTargetLabel").textContent = model.sim.targetBCR;
+    if ($("#simN")) $("#simN").value = model.sim.n;
+    if ($("#targetBCR")) $("#targetBCR").value = model.sim.targetBCR;
+    if ($("#bcrMode")) $("#bcrMode").value = model.sim.bcrMode;
+    if ($("#simBcrTargetLabel")) $("#simBcrTargetLabel").textContent = model.sim.targetBCR;
 
-    $("#simVarPct").value = String(model.sim.variationPct || 20);
-    $("#simVaryOutputs").value = model.sim.varyOutputs ? "true" : "false";
-    $("#simVaryTreatCosts").value = model.sim.varyTreatCosts ? "true" : "false";
-    $("#simVaryInputCosts").value = model.sim.varyInputCosts ? "true" : "false";
+    if ($("#simVarPct")) $("#simVarPct").value = String(model.sim.variationPct || 20);
+    if ($("#simVaryOutputs")) $("#simVaryOutputs").value = model.sim.varyOutputs ? "true" : "false";
+    if ($("#simVaryTreatCosts")) $("#simVaryTreatCosts").value = model.sim.varyTreatCosts ? "true" : "false";
+    if ($("#simVaryInputCosts")) $("#simVaryInputCosts").value = model.sim.varyInputCosts ? "true" : "false";
 
-    $("#systemType").value = model.outputsMeta.systemType || "single";
-    $("#outputAssumptions").value = model.outputsMeta.assumptions || "";
+    if ($("#systemType")) $("#systemType").value = model.outputsMeta.systemType || "single";
+    if ($("#outputAssumptions")) $("#outputAssumptions").value = model.outputsMeta.assumptions || "";
 
     const sched = model.time.discountSchedule || DEFAULT_DISCOUNT_SCHEDULE;
     $$("input[data-disc-period]").forEach(inp => {
@@ -678,8 +692,8 @@
             (1 - num("#rSocio")) *
             (1 - num("#rFin")) *
             (1 - num("#rMan"));
-        $("#combinedRiskOut").textContent = "Combined: " + (r * 100).toFixed(2) + "%";
-        $("#riskBase").value = r.toFixed(3);
+        if ($("#combinedRiskOut")) $("#combinedRiskOut").textContent = "Combined: " + (r * 100).toFixed(2) + "%";
+        if ($("#riskBase")) $("#riskBase").value = r.toFixed(3);
         model.risk.base = r;
         calcAndRender();
       });
@@ -844,7 +858,7 @@
           break;
         case "targetBCR":
           model.sim.targetBCR = +t.value;
-          $("#simBcrTargetLabel").textContent = t.value;
+          if ($("#simBcrTargetLabel")) $("#simBcrTargetLabel").textContent = t.value;
           break;
         case "bcrMode":
           model.sim.bcrMode = t.value;
@@ -3020,7 +3034,7 @@
   function buildCopilotPrompt() {
     const s = buildSummaryForCsv();
     const rate = model.time.discBase;
-    const adoptMul = model.adoption.base;
+       const adoptMul = model.adoption.base;
     const risk = model.risk.base;
 
     const treatmentLines = model.treatments
