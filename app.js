@@ -1,5 +1,5 @@
 // app.js
-// Farming CBA Tool - Newcastle Business School (enhanced project, time, outputs, treatments, costs, simulation, report)
+// Farming CBA Tool - Newcastle Business School (enhanced project, time, outputs, treatments, costs, simulation, report latest versio)
 (() => {
   // ---------- CONSTANTS ----------
   const DEFAULT_DISCOUNT_SCHEDULE = [
