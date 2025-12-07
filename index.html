@@ -27,7 +27,7 @@
 
   <main class="app-shell">
     <nav id="tabs" class="tabs">
-      <button data-tab="cover" class="active">Overview</button>
+      <button data-tab="cover" class="active" aria-selected="true">Overview</button>
       <button data-tab="project">Project</button>
       <button data-tab="time">Time and Discounting</button>
       <button data-tab="outputs">Outputs</button>
@@ -41,7 +41,7 @@
     </nav>
 
     <!-- COVER / OVERVIEW -->
-    <section id="tab-cover" class="tab-panel show">
+    <section id="tab-cover" class="tab-panel show" aria-hidden="false">
       <section class="card hero">
         <div class="hero-main">
           <h2>Farming CBA Decision Aid</h2>
@@ -56,7 +56,9 @@
             costs. The Simulation and Results tabs summarise the base case and
             uncertainty analysis.
           </p>
-          <button id="startBtn" class="btn primary">Start with project information</button>
+          <button id="startBtn" class="btn primary" data-tab-jump="project">
+            Start with project information
+          </button>
         </div>
         <div class="hero-side">
           <h3>Key features</h3>
@@ -73,7 +75,7 @@
     </section>
 
     <!-- PROJECT INFORMATION -->
-    <section id="tab-project" class="tab-panel">
+    <section id="tab-project" class="tab-panel" aria-hidden="true">
       <section class="card">
         <h2>Project information</h2>
         <div class="grid-2">
@@ -149,7 +151,7 @@
     </section>
 
     <!-- TIME AND DISCOUNTING -->
-    <section id="tab-time" class="tab-panel">
+    <section id="tab-time" class="tab-panel" aria-hidden="true">
       <section class="card">
         <h2>Time horizon and discounting</h2>
         <div class="grid-3">
@@ -251,7 +253,7 @@
     </section>
 
     <!-- OUTPUTS -->
-    <section id="tab-outputs" class="tab-panel">
+    <section id="tab-outputs" class="tab-panel" aria-hidden="true">
       <section class="card">
         <div class="card-header">
           <h2>Outputs and direct benefits</h2>
@@ -277,7 +279,7 @@
     </section>
 
     <!-- TREATMENTS -->
-    <section id="tab-treatments" class="tab-panel">
+    <section id="tab-treatments" class="tab-panel" aria-hidden="true">
       <section class="card">
         <div class="card-header">
           <h2>Treatments and adoption</h2>
@@ -315,7 +317,7 @@
     </section>
 
     <!-- BENEFITS -->
-    <section id="tab-benefits" class="tab-panel">
+    <section id="tab-benefits" class="tab-panel" aria-hidden="true">
       <section class="card">
         <div class="card-header">
           <h2>Indirect benefits</h2>
@@ -330,7 +332,7 @@
     </section>
 
     <!-- COSTS -->
-    <section id="tab-costs" class="tab-panel">
+    <section id="tab-costs" class="tab-panel" aria-hidden="true">
       <section class="card">
         <div class="card-header">
           <h2>Production costs</h2>
@@ -351,7 +353,7 @@
     </section>
 
     <!-- DATABASE -->
-    <section id="tab-database" class="tab-panel">
+    <section id="tab-database" class="tab-panel" aria-hidden="true">
       <section class="card">
         <h2>Database integration tags</h2>
         <p class="small muted">
@@ -369,7 +371,7 @@
     </section>
 
     <!-- SIMULATION -->
-    <section id="tab-sim" class="tab-panel">
+    <section id="tab-sim" class="tab-panel" aria-hidden="true">
       <section class="card">
         <h2>Simulation and risk</h2>
 
@@ -503,7 +505,7 @@
     </section>
 
     <!-- RESULTS -->
-    <section id="tab-report" class="tab-panel">
+    <section id="tab-report" class="tab-panel" aria-hidden="true">
       <section class="card">
         <div class="card-header">
           <h2>Base case economic indicators</h2>
@@ -615,7 +617,7 @@
         </div>
 
         <div class="action-row">
-          <button id="openCopilot" class="btn primary">
+          <button id="openCopilotResults" class="btn primary">
             Send summary to Copilot
           </button>
           <span class="hint-small">
@@ -627,7 +629,7 @@
     </section>
 
     <!-- UNCERTAINTY DISTRIBUTIONS -->
-    <section id="tab-distribution" class="tab-panel">
+    <section id="tab-distribution" class="tab-panel" aria-hidden="true">
       <section class="card">
         <h2>Uncertainty visualisation</h2>
         <p class="small muted">
