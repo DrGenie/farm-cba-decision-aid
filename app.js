@@ -1,6 +1,9 @@
-// app.js
-// Farming CBA Tool - Newcastle Business School (enhanced project, time, outputs, treatments, costs, simulation, report latest versio)
+// Farming CBA Tool - Newcastle Business School
+// Fully upgraded script with working tabs, CBA, simulation, exports, and Copilot helper
+
 (() => {
+  "use strict";
+
   // ---------- CONSTANTS ----------
   const DEFAULT_DISCOUNT_SCHEDULE = [
     { label: "2025-2034", from: 2025, to: 2034, low: 2, base: 4, high: 6 },
@@ -32,7 +35,7 @@
       activities: "",
       stakeholders: "",
       lastUpdated: new Date().toISOString().slice(0, 10),
-      goal: "Increase yield by 10 percent and protein by 0.5 percentage points on 500 ha within 3 years.",
+      goal: "Increase yield by 10% and protein by 0.5 percentage points on 500 ha within 3 years.",
       withProject: "Adopt optimized nitrogen timing and rates with improved management over 500 ha.",
       withoutProject:
         "Business as usual fertilization with unchanged yield and protein and rising costs."
@@ -217,7 +220,7 @@
         : n.toLocaleString(undefined, { maximumFractionDigits: 2 })
       : "n/a";
   const money = n => (isFinite(n) ? "$" + fmt(n) : "n/a");
-  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a";
+  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a");
   const slug = s =>
     (s || "project")
       .toLowerCase()
@@ -232,30 +235,36 @@
       .toString()
       .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  function saveWorkbook(filename, wb) {
-    try {
-      if (window.XLSX && typeof XLSX.writeFile === "function") {
-        XLSX.writeFile(wb, filename, { compression: true });
-        return;
-      }
-    } catch (_) {}
-    try {
-      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array", compression: true });
-      const blob = new Blob([wbout], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-      }, 300);
-    } catch (err) {
-      alert("Download failed. Please ensure the SheetJS script is loaded.\n\n" + (err && err.message ? err.message : err));
-    }
+  function rng(seed) {
+    let t = (seed || Math.floor(Math.random() * 2 ** 31)) >>> 0;
+    return () => {
+      t += 0x6d2b79f5;
+      let x = t;
+      x = Math.imul(x ^ (x >>> 15), 1 | x);
+      x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function triangular(r, a, c, b) {
+    const F = (c - a) / (b - a);
+    if (r < F) return a + Math.sqrt(r * (b - a) * (c - a));
+    return b - Math.sqrt((1 - r) * (b - a) * (b - c));
+  }
+
+  function showToast(message) {
+    const root = document.getElementById("toast-root") || document.body;
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.textContent = message;
+    root.appendChild(toast);
+    // force reflow
+    void toast.offsetWidth;
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 200);
+    }, 3500);
   }
 
   // ---------- CASHFLOWS ----------
@@ -526,7 +535,7 @@
     if (el) el.textContent = text;
   };
 
-  // Robust tab switcher
+  // ---------- TABS ----------
   function switchTab(target) {
     if (!target) return;
 
@@ -894,6 +903,7 @@
           data,
           "application/json"
         );
+        showToast("Project JSON downloaded.");
       });
     }
 
@@ -915,6 +925,7 @@
           renderAll();
           setBasicsFieldsFromModel();
           calcAndRender();
+          showToast("Project JSON loaded.");
         } catch (err) {
           alert("Invalid JSON file.");
           console.error(err);
@@ -949,11 +960,13 @@
       startBtn.addEventListener("click", () => switchTab("project"));
     }
 
-    const openCopilotBtn = $("#openCopilot");
-    if (openCopilotBtn) {
-      openCopilotBtn.addEventListener("click", e => {
-        e.preventDefault();
-        handleOpenCopilotClick();
+    const openCopilotBtns = $$("#openCopilot");
+    if (openCopilotBtns.length) {
+      openCopilotBtns.forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.preventDefault();
+          handleOpenCopilotClick();
+        });
       });
     }
   }
@@ -1065,7 +1078,7 @@
                 .join("")}
             </select>
           </div>
-          <div class="field"><label>&nbsp;</label><button class="danger" data-del-output="${o.id}">Remove</button></div>
+          <div class="field"><label>&nbsp;</label><button class="btn small danger" data-del-output="${o.id}">Remove</button></div>
         </div>
         <div class="kv"><small class="muted">id:</small> <code>${o.id}</code></div>
       `;
@@ -1136,7 +1149,7 @@
               <option value="true" ${t.isControl ? "selected" : ""}>Yes</option>
             </select>
           </div>
-          <div class="field"><label>&nbsp;</label><button class="danger" data-del-treatment="${t.id}">Remove</button></div>
+          <div class="field"><label>&nbsp;</label><button class="btn small danger" data-del-treatment="${t.id}">Remove</button></div>
         </div>
         <div class="row-6">
           <div class="field"><label>Materials cost ($/ha)</label><input type="number" step="0.01" value="${t.materialsCost || 0}" data-tk="materialsCost" data-id="${t.id}" /></div>
@@ -1188,7 +1201,6 @@
           });
           if (val) t.isControl = true;
           renderTreatments();
-          renderDatabaseTags();
           calcAndRenderDebounced();
           return;
         } else if (tk === "replications") {
@@ -1284,7 +1296,7 @@
           <div class="field"><label>P1 (with project probability)</label><input type="number" step="0.001" value="${b.p1 || 0}" data-bk="p1" data-id="${b.id}" /></div>
           <div class="field"><label>Consequence ($)</label><input type="number" step="0.01" value="${b.consequence || 0}" data-bk="consequence" data-id="${b.id}" /></div>
           <div class="field"><label>Notes</label><input value="${esc(b.notes || "")}" data-bk="notes" data-id="${b.id}" /></div>
-          <div class="field"><label>&nbsp;</label><button class="danger" data-del-benefit="${b.id}">Remove</button></div>
+          <div class="field"><label>&nbsp;</label><button class="btn small danger" data-del-benefit="${b.id}">Remove</button></div>
         </div>
       `;
       root.appendChild(el);
@@ -1359,7 +1371,7 @@
               <option value="false" ${!c.constrained ? "selected" : ""}>No</option>
             </select>
           </div>
-          <div class="field"><label>&nbsp;</label><button class="danger" data-del-cost="${c.id}">Remove</button></div>
+          <div class="field"><label>&nbsp;</label><button class="btn small danger" data-del-cost="${c.id}">Remove</button></div>
         </div>
       `;
       root.appendChild(el);
@@ -1653,7 +1665,7 @@
     }
 
     const tbl = document.createElement("table");
-    tbl.className = "dep-table";
+    tbl.className = "dep-table summary-table";
     tbl.innerHTML = `
       <thead>
         <tr>
@@ -1810,23 +1822,6 @@
   }
 
   // ---------- MONTE CARLO ----------
-  function rng(seed) {
-    let t = (seed || Math.floor(Math.random() * 2 ** 31)) >>> 0;
-    return () => {
-      t += 0x6d2b79f5;
-      let x = t;
-      x = Math.imul(x ^ (x >>> 15), 1 | x);
-      x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
-      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function triangular(r, a, c, b) {
-    const F = (c - a) / (b - a);
-    if (r < F) return a + Math.sqrt(r * (b - a) * (c - a));
-    return b - Math.sqrt((1 - r) * (b - a) * (b - c));
-  }
-
   async function runSimulation() {
     const status = $("#simStatus");
     if (status) status.textContent = "Running ...";
@@ -2288,235 +2283,106 @@
     model.outputs.forEach(o => outRows.push([o.name, o.unit, o.value, o.source, o.id]));
     downloadFile("cba_outputs_" + slug(s.meta.name) + ".csv", toCsv(outRows));
 
-    const { npv, bcr } = model.sim.results;
-    if (npv && npv.length) {
-      const validBcr = bcr.filter(x => isFinite(x));
-      const stats = arr => {
-        const a = [...arr].sort((x, y) => x - y);
-        const N = a.length;
-        const med = (a[Math.floor((N - 1) / 2)] + a[Math.ceil((N - 1) / 2)]) / 2;
-        const mean = a.reduce((u, v) => u + v, 0) / N;
-        return { min: a[0], max: a[N - 1], mean, median: med };
-      };
-      const sN = stats(npv);
-      const sB = validBcr.length ? stats(validBcr) : { min: "", max: "", mean: "", median: "" };
-      const pN = (npv.filter(x => x > 0).length / npv.length) * 100;
-      const tgt = model.sim.targetBCR;
-      const pB1 = validBcr.length
-        ? (validBcr.filter(x => x > 1).length / validBcr.length) * 100
-        : 0;
-      const pBt = validBcr.length
-        ? (validBcr.filter(x => x > tgt).length / validBcr.length) * 100
-        : 0;
-
-      const simRows = [
-        ["N", model.sim.n],
-        ["BCR mode", model.sim.bcrMode],
-        ["NPV min", sN.min],
-        ["NPV max", sN.max],
-        ["NPV mean", sN.mean],
-        ["NPV median", sN.median],
-        ["Pr(NPV > 0) %", pN],
-        [],
-        ["BCR min", sB.min],
-        ["BCR max", sB.max],
-        ["BCR mean", sB.mean],
-        ["BCR median", sB.median],
-        ["Pr(BCR > 1) %", pB1],
-        ["Pr(BCR > Target) %", pBt]
-      ];
-      downloadFile("cba_simulation_summary_" + slug(s.meta.name) + ".csv", toCsv(simRows));
-
-      const rawRows = [
-        ["run", "discount", "adoption", "risk", "pvBenefits", "pvCosts", "npv", "bcr"]
-      ];
-      model.sim.details.forEach(d =>
-        rawRows.push([
-          d.run,
-          d.discount,
-          d.adoption,
-          d.risk,
-          d.pvBenefits,
-          d.pvCosts,
-          d.npv,
-          d.bcr
-        ])
-      );
-      downloadFile("cba_simulation_raw_" + slug(s.meta.name) + ".csv", toCsv(rawRows));
-    } else {
-      const simRows = [
-        ["N", model.sim.n],
-        ["BCR mode", model.sim.bcrMode],
-        ["Note", "Run Monte Carlo to populate results."]
-      ];
-      downloadFile("cba_simulation_summary_" + slug(s.meta.name) + ".csv", toCsv(simRows));
-    }
-  }
-
-  // ---------- PRINT AND COPILOT ----------
-  function getPrintCss() {
-    return `
-      body{background:#fff;margin:0}
-      .print-report{font:13px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;padding:24px;max-width:900px;margin:0 auto}
-      .print-header{display:grid;grid-template-columns:60px 1fr;gap:12px;align-items:center;margin-bottom:6px}
-      .print-logo{width:60px;height:60px;border-radius:14px;display:grid;place-items:center;font-size:26px;
-        background:linear-gradient(135deg,#9be2ad,#ffd77e);border:1px solid #eee}
-      .print-report h1{font-size:20px;margin:0 0 6px}
-      .print-report h2{font-size:16px;margin:14px 0 6px}
-      .print-report table{border-collapse:collapse;width:100%;margin:6px 0}
-      .print-report th,.print-report td{border:1px solid #ddd;padding:6px;text-align:left}
-      .print-report .muted{color:#555}
-      .print-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-      .print-small{font-size:12px}
-      .print-badge{display:inline-block;border-radius:99px;border:1px solid #ccd;padding:2px 8px;font-size:11px;margin-left:6px}
-    `;
-  }
-
-  function buildPrintHtml() {
-    const s = buildSummaryForCsv();
-    const rate = model.time.discBase;
-    const adoptMul = model.adoption.base;
-    const risk = model.risk.base;
-    const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
-
-    return `
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Farming CBA report</title>
-        <style>${getPrintCss()}</style>
-      </head>
-      <body>
-        <div class="print-report">
-          <div class="print-header">
-            <div class="print-logo">🌾</div>
-            <div>
-              <h1>Farming CBA Decision Aid</h1>
-              <div class="print-small muted">${esc(s.meta.organisation || "")}</div>
-            </div>
-          </div>
-
-          <h2>Project</h2>
-          <table>
-            <tbody>
-              <tr><th>Project</th><td>${esc(s.meta.name || "")}</td></tr>
-              <tr><th>Lead</th><td>${esc(s.meta.lead || "")}</td></tr>
-              <tr><th>Analysts</th><td>${esc(s.meta.analysts || "")}</td></tr>
-              <tr><th>Organisation</th><td>${esc(s.meta.organisation || "")}</td></tr>
-              <tr><th>Contact</th><td>${esc(s.meta.contact || "")}</td></tr>
-              <tr><th>Last updated</th><td>${esc(s.meta.updated || "")}</td></tr>
-            </tbody>
-          </table>
-
-          <h2>Base case settings</h2>
-          <table>
-            <tbody>
-              <tr><th>Start year</th><td>${s.params.startYear}</td></tr>
-              <tr><th>Project start year</th><td>${s.params.projectStartYear}</td></tr>
-              <tr><th>Horizon (years)</th><td>${s.params.years}</td></tr>
-              <tr><th>Discount rate (base)</th><td>${s.params.discountBase}%</td></tr>
-              <tr><th>Adoption multiplier</th><td>${s.params.adoptionBase}</td></tr>
-              <tr><th>Overall risk</th><td>${s.params.riskBase}</td></tr>
-            </tbody>
-          </table>
-
-          <h2>Base case economic indicators</h2>
-          <table>
-            <tbody>
-              <tr><th>Present value of benefits</th><td>${money(all.pvBenefits)}</td></tr>
-              <tr><th>Present value of costs</th><td>${money(all.pvCosts)}</td></tr>
-              <tr><th>Net present value</th><td>${money(all.npv)}</td></tr>
-              <tr><th>Benefit cost ratio</th><td>${isFinite(all.bcr) ? fmt(all.bcr) : "n/a"}</td></tr>
-              <tr><th>Internal rate of return</th><td>${isFinite(all.irrVal) ? percent(all.irrVal) : "n/a"}</td></tr>
-              <tr><th>Modified internal rate of return</th><td>${isFinite(all.mirrVal) ? percent(all.mirrVal) : "n/a"}</td></tr>
-              <tr><th>Return on investment</th><td>${isFinite(all.roi) ? percent(all.roi) : "n/a"}</td></tr>
-              <tr><th>Annual gross margin</th><td>${money(all.annualGM)}</td></tr>
-              <tr><th>Gross profit margin</th><td>${isFinite(all.profitMargin) ? percent(all.profitMargin) : "n/a"}</td></tr>
-              <tr><th>Payback (years)</th><td>${all.paybackYears ?? "Not reached"}</td></tr>
-            </tbody>
-          </table>
-
-          <p class="print-small muted">
-            Generated by the Farming CBA Decision Aid at ${new Date().toLocaleString()}.
-          </p>
-        </div>
-      </body>
-      </html>
-    `;
+    showToast("CSV exports downloaded.");
   }
 
   function exportPdf() {
-    const html = buildPrintHtml();
-    const win = window.open("", "_blank");
-    if (!win) {
-      alert("Popup blocked. Allow popups for this site to print the report.");
-      return;
-    }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
+    window.print();
   }
 
-  function buildCopilotSummary() {
-    const s = buildSummaryForCsv();
-    const r = s.results;
-    const lines = [
-      "Farming CBA Decision Aid structured summary.",
-      "",
-      `Project: ${s.meta.name}`,
-      `Lead: ${s.meta.lead}`,
-      `Organisation: ${s.meta.organisation}`,
-      "",
-      `Analysis start year: ${s.params.startYear}`,
-      `Horizon (years): ${s.params.years}`,
-      `Base discount rate: ${s.params.discountBase}`,
-      `Adoption multiplier: ${s.params.adoptionBase}`,
-      `Overall risk: ${s.params.riskBase}`,
-      "",
-      `Present value of benefits: ${r.pvBenefits}`,
-      `Present value of costs: ${r.pvCosts}`,
-      `Net present value: ${r.npv}`,
-      `Benefit cost ratio: ${r.bcr}`,
-      `Internal rate of return (percent): ${r.irrVal}`,
-      `Modified internal rate of return (percent): ${r.mirrVal}`,
-      `Return on investment (percent): ${r.roi}`,
-      `Annual gross margin: ${r.annualGM}`,
-      `Gross profit margin (percent): ${r.profitMargin}`,
-      `Payback (years): ${r.paybackYears ?? "Not reached"}`,
-      "",
-      "Please provide a plain language interpretation of these economic results for a farming audience."
-    ];
-    return lines.join("\n");
+  // ---------- EXCEL STUBS (SAFE NO-OPS FOR NOW) ----------
+  function handleParseExcel() {
+    showToast("Excel parsing is not wired for this version of the tool.");
+  }
+  function commitExcelToModel() {
+    showToast("Excel import is not wired for this version of the tool.");
+  }
+  function downloadExcelTemplate() {
+    showToast("Excel template is not configured in this version.");
+  }
+  function downloadSampleDataset() {
+    showToast("Sample dataset download is not configured in this version.");
+  }
+
+  // ---------- COPILOT HELPER ----------
+  async function copyToClipboard(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (_) {}
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function handleOpenCopilotClick() {
-    const summary = buildCopilotSummary();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(summary).catch(() => {
-        /* ignore */
-      });
-    }
-    const url = "https://copilot.microsoft.com/";
-    window.open(url, "_blank");
-  }
+    calcAndRender(); // make sure results are fresh
+    const summary = buildSummaryForCsv();
+    const sim = model.sim.results || {};
+    const scenario = {
+      project: summary.meta,
+      parameters: summary.params,
+      baseCase: {
+        pvBenefits: summary.results.pvBenefits,
+        pvCosts: summary.results.pvCosts,
+        npv: summary.results.npv,
+        bcr: summary.results.bcr,
+        irr: summary.results.irrVal,
+        mirr: summary.results.mirrVal,
+        roi: summary.results.roi,
+        annualGrossMargin: summary.results.annualGM,
+        profitMargin: summary.results.profitMargin,
+        paybackYears: summary.results.paybackYears
+      },
+      simulation: {
+        n: model.sim.n,
+        targetBCR: model.sim.targetBCR,
+        npvResults: sim.npv || [],
+        bcrResults: sim.bcr || []
+      }
+    };
 
-  // ---------- EXCEL PLACEHOLDERS ----------
-  function handleParseExcel() {
-    alert("Excel parsing is not configured in this version.");
-  }
+    const scenarioJson = JSON.stringify(scenario, null, 2);
 
-  function commitExcelToModel() {
-    alert("Excel import is not configured in this version.");
-  }
+    const promptText =
+`You are an agricultural economics assistant helping to interpret a cost benefit analysis for a farming project.
 
-  function downloadExcelTemplate() {
-    alert("Excel template download is not configured in this version.");
-  }
+Using the JSON scenario below, produce a clear policy briefing that:
+1. Summarises the project context, objectives, and key assumptions.
+2. Explains the base case results for present value of benefits and costs, net present value, benefit cost ratio, internal rate of return, modified IRR, return on investment, annual gross margin, profit margin, and payback period.
+3. Interprets any Monte Carlo simulation outputs, focusing on the probability that NPV is positive and that BCR exceeds 1 and the specified target threshold.
+4. Provides a short narrative on risk, adoption, and implementation considerations for decision makers.
+5. Presents a concise recommendation on whether the project is economically attractive and under what conditions.
 
-  function downloadSampleDataset() {
-    alert("Sample dataset download is not configured in this version.");
+Use tables where useful, keep the language accessible for policy makers, and express all monetary quantities in the same currency as the input.
+
+SCENARIO JSON:
+\`\`\`json
+${scenarioJson}
+\`\`\`
+`;
+
+    copyToClipboard(promptText).then(ok => {
+      if (ok) {
+        showToast("CBA summary and Copilot prompt copied. Opening Copilot in a new tab.");
+      } else {
+        showToast("Could not copy to clipboard automatically. You may need to copy manually.");
+      }
+      window.open("https://copilot.microsoft.com/", "_blank");
+    });
   }
 
   // ---------- INIT ----------
