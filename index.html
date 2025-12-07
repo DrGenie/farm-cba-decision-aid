@@ -20,7 +20,7 @@
       <button id="loadProject" class="btn ghost">Load JSON</button>
       <input id="loadFile" type="file" accept=".json" hidden />
       <button id="exportCsv" class="btn ghost">Export CSV</button>
-      <button id="exportPdf" class="btn ghost">Print Report</button>
+      <button id="exportPdf" class="btn ghost">Print report</button>
       <button id="openCopilot" class="btn primary">Open in Copilot</button>
     </div>
   </header>
@@ -34,10 +34,11 @@
       <button data-tab="treatments">Treatments</button>
       <button data-tab="benefits">Benefits</button>
       <button data-tab="costs">Costs</button>
-      <button data-tab="database">Database</button>
+      <button data-tab="database">Database and import</button>
       <button data-tab="sim">Simulation</button>
       <button data-tab="report">Results</button>
       <button data-tab="distribution">Uncertainty</button>
+      <button data-tab="video">Video guide</button>
     </nav>
 
     <!-- COVER / OVERVIEW -->
@@ -48,13 +49,14 @@
           <p>
             This tool supports project level cost benefit analysis for agricultural
             trials. It links treatment level outputs, costs, adoption and risk to
-            standard economic indicators such as NPV, BCR, IRR and payback.
+            economic indicators such as net present value, benefit cost ratio,
+            internal rate of return and payback.
           </p>
           <p>
             Use the tabs to enter project information, time horizon and discount
             schedule, treatment and output data, indirect benefits, and production
-            costs. The Simulation and Results tabs summarise the base case and
-            uncertainty analysis.
+            costs. The Simulation, Results and Uncertainty tabs summarise the base
+            case analysis and the effect of uncertainty.
           </p>
           <button id="startBtn" class="btn primary">Start with project information</button>
         </div>
@@ -67,6 +69,7 @@
             <li>Monte Carlo uncertainty analysis</li>
             <li>Export to CSV and printable report</li>
             <li>Soft integration with Microsoft Copilot for narrative summaries</li>
+            <li>Structured video guide explaining each tab and workflow</li>
           </ul>
         </div>
       </section>
@@ -350,14 +353,14 @@
       </section>
     </section>
 
-    <!-- DATABASE -->
+    <!-- DATABASE AND IMPORT -->
     <section id="tab-database" class="tab-panel">
       <section class="card">
         <h2>Database integration tags</h2>
         <p class="small muted">
           Use these source tags to flag where data came from, such as farm trials, plant
-          farm data, ABARES, GRDC, or receipts. In future these tags can be mapped to
-          external databases and loaded via a dataset import feature.
+          farm data, ABARES, GRDC, or receipts. These tags can be mapped to external
+          datasets and combined with the JSON and Excel import functions below.
         </p>
 
         <h3>Outputs</h3>
@@ -365,6 +368,44 @@
 
         <h3>Treatments</h3>
         <div id="dbTreatments" class="item-list slim"></div>
+      </section>
+
+      <section class="card">
+        <h2>Data import and templates</h2>
+        <p class="small muted">
+          Use this section to work with Excel based input files. You can download a
+          template, review a realistic sample dataset for Australian broadacre farming,
+          and then import and parse your own Excel file before committing it into the
+          current CBA model.
+        </p>
+
+        <div class="grid-2">
+          <div class="field">
+            <button id="downloadTemplate" class="btn small">Download Excel template</button>
+          </div>
+          <div class="field">
+            <button id="downloadSample" class="btn small">Download sample dataset</button>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="field">
+            <button id="chooseExcel" class="btn small">Choose Excel file</button>
+            <input id="excelFile" type="file" accept=".xlsx,.xls" hidden />
+          </div>
+          <div class="field">
+            <button id="parseExcel" class="btn small">Parse Excel data</button>
+          </div>
+          <div class="field">
+            <button id="importExcel" class="btn small">Import parsed data into model</button>
+          </div>
+        </div>
+
+        <p class="small muted">
+          After import, outputs, treatments, benefits and costs are updated to match the
+          contents of the Excel file. You can then review and edit values in the other tabs
+          before running the analysis.
+        </p>
       </section>
     </section>
 
@@ -643,6 +684,134 @@
             <canvas id="histBcr" width="480" height="260"></canvas>
           </div>
         </div>
+      </section>
+    </section>
+
+    <!-- VIDEO GUIDE -->
+    <section id="tab-video" class="tab-panel">
+      <section class="card">
+        <h2>Video guide and walkthrough</h2>
+        <p class="small muted">
+          This tab provides a narrated walkthrough of the Farming CBA Decision Aid and a
+          written script describing each step. Use it as a training resource for new
+          users and as a refresher when returning to the tool.
+        </p>
+
+        <div class="video-wrapper">
+          <!-- Replace the src with the final hosted video link when available -->
+          <iframe
+            id="toolVideo"
+            src=""
+            title="Farming CBA Decision Aid video guide"
+            frameborder="0"
+            allowfullscreen
+          ></iframe>
+        </div>
+
+        <h3>Script for the video guide</h3>
+        <p>
+          The Farming CBA Decision Aid is designed to help agricultural researchers and
+          decision makers translate field trial results into project level economic
+          indicators. The tool guides you through a structured workflow that mirrors the
+          logic of a formal cost benefit analysis while remaining accessible to users who
+          are not specialist economists.
+        </p>
+        <p>
+          Start in the Overview tab to orient yourself. The overview summarises the
+          purpose of the tool and lists the main features. When you are ready, select
+          the button to start with project information or click directly on the Project
+          tab in the navigation bar.
+        </p>
+        <p>
+          In the Project tab you record the basic narrative of your project. Enter the
+          project name, organisation, lead researcher, analyst team and contact details.
+          Use the summary, objectives, activities and stakeholder boxes to capture the
+          story in plain language. The with project and without project narratives set
+          up the counterfactual that underpins the analysis. These descriptions are later
+          used in reports and Copilot summaries.
+        </p>
+        <p>
+          The Time and Discounting tab specifies the analysis window and discount rates.
+          Choose the analysis start year, project start year and the length of the
+          analysis in years. You can enter low, base and high discount rates for the
+          main scenario and also configure a period specific schedule that will be used
+          in the Monte Carlo module. Finance and reinvestment rates for the modified
+          internal rate of return can be set here as well.
+        </p>
+        <p>
+          The Outputs tab captures direct outputs that can be valued in monetary terms,
+          such as grain yield or biomass. For each output you specify a name, unit,
+          value per unit and data source. You can also record key hypotheses and
+          assumptions about how outputs are measured or modelled. These outputs are
+          referenced in the Treatments tab where per hectare changes are entered.
+        </p>
+        <p>
+          In the Treatments tab you define the interventions being tested. For each
+          treatment you can specify the area in hectares, per hectare costs for
+          materials and services, any capital costs at year zero, and whether the
+          treatment is constrained for the benefit cost ratio denominator. Output
+          deltas per hectare are recorded in a grid under each treatment. The adoption
+          field captures the expected proportion of the target area that will take up
+          the practice in practice and feeds directly into the benefit calculations.
+          One treatment can be marked as the control group for comparative reporting.
+        </p>
+        <p>
+          The Benefits tab lets you add indirect or non yield benefits, such as
+          improvements in soil structure, reductions in risk of downgrade, or changes
+          in water retention. Each benefit can be classified into a category and theme,
+          linked to adoption and risk, and scheduled across years. The tool converts
+          these entries into annual benefit flows that sit alongside direct output
+          benefits in the cash flow engine.
+        </p>
+        <p>
+          The Costs tab captures production related and project related costs that are
+          not already embedded in the treatment definitions. These can be annual or
+          capital costs and can be assigned to categories such as labour, materials,
+          services or capital. For capital items you can choose a depreciation method
+          and life, and the Depreciation summary panel will show indicative schedules.
+        </p>
+        <p>
+          The Database and import tab provides two functions. First, it allows you to
+          tag outputs and treatments with data sources such as farm trials, plant farm
+          data or national statistics. Second, it lets you download an Excel template,
+          review a realistic sample dataset, and then upload and import your own Excel
+          files so that the tool can populate outputs, treatments, benefits and costs
+          directly from structured spreadsheets.
+        </p>
+        <p>
+          The Simulation tab controls the Monte Carlo module. Here you enter an overall
+          risk profile with low, base and high values, and optionally break risk down
+          into technical, cooperation, social, financial and management components. You
+          also set the number of runs, the target benefit cost ratio threshold, a random
+          seed and the range of shocks applied to output prices and costs. When you run
+          the simulation, the tool reports the distribution of net present value and
+          benefit cost ratio and the probability that these indicators exceed chosen
+          thresholds.
+        </p>
+        <p>
+          The Results tab presents the base case economic indicators, including present
+          value of benefits and costs, net present value, benefit cost ratio, internal
+          rate of return, modified internal rate of return, return on investment, annual
+          gross margin and payback period. It also provides a side by side comparison of
+          a designated control treatment and the combined treatment group. Time based
+          projections show how present values and net benefits change as the horizon is
+          extended. From this tab you can export CSV files, print a report and send a
+          structured summary to Copilot for narrative interpretation.
+        </p>
+        <p>
+          The Uncertainty tab shows histograms of net present value and benefit cost
+          ratio based on the simulation runs. These plots help you communicate the
+          range of possible outcomes rather than only presenting a single base case
+          estimate. They are designed to be clear and self contained so that they can
+          be included in reports and presentations.
+        </p>
+        <p>
+          Throughout the tool, buttons display short confirmation messages in the corner
+          of the screen so that users can see when actions such as recalculation, export
+          and simulation have completed. Together, these features turn raw trial data
+          into a structured and transparent economic narrative that can be shared with
+          farmers, extension officers and policy makers.
+        </p>
       </section>
     </section>
   </main>
