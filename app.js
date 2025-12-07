@@ -1,3 +1,4 @@
+// app.js
 // Farming CBA Tool - Newcastle Business School (enhanced project, time, outputs, treatments, costs, simulation, report)
 (() => {
   // ---------- CONSTANTS ----------
@@ -31,7 +32,7 @@
       activities: "",
       stakeholders: "",
       lastUpdated: new Date().toISOString().slice(0, 10),
-      goal: "Increase yield by 10% and protein by 0.5 percentage points on 500 ha within 3 years.",
+      goal: "Increase yield by 10 percent and protein by 0.5 percentage points on 500 ha within 3 years.",
       withProject: "Adopt optimized nitrogen timing and rates with improved management over 500 ha.",
       withoutProject:
         "Business as usual fertilization with unchanged yield and protein and rising costs."
@@ -216,7 +217,7 @@
         : n.toLocaleString(undefined, { maximumFractionDigits: 2 })
       : "n/a";
   const money = n => (isFinite(n) ? "$" + fmt(n) : "n/a");
-  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a");
+  const percent = n => (isFinite(n) ? fmt(n) + "%" : "n/a";
   const slug = s =>
     (s || "project")
       .toLowerCase()
@@ -525,9 +526,7 @@
     if (el) el.textContent = text;
   };
 
-  // Robust tab switcher that works with:
-  // - any element with [data-tab], [data-tab-target], or [data-tab-jump] as nav
-  // - panels using id="tab-<name>", id="<name>", or data-tab-panel="<name>"
+  // Robust tab switcher
   function switchTab(target) {
     if (!target) return;
 
@@ -552,7 +551,6 @@
       p.classList.toggle("show", show);
       p.hidden = !show;
       p.setAttribute("aria-hidden", show ? "false" : "true");
-      // Hard-override display so tabs work even if CSS is different
       p.style.display = show ? "" : "none";
     });
 
@@ -560,7 +558,6 @@
   }
 
   function initTabs() {
-    // Click delegation for any element that declares a tab target
     document.addEventListener("click", e => {
       const el = e.target.closest("[data-tab],[data-tab-target],[data-tab-jump]");
       if (!el) return;
@@ -573,10 +570,6 @@
       switchTab(target);
     });
 
-    // Initial tab selection:
-    // 1. Any nav (data-tab / data-tab-target / data-tab-jump) marked .active
-    // 2. Otherwise first nav
-    // 3. Otherwise first panel
     const activeNav =
       document.querySelector("[data-tab].active, [data-tab-target].active, [data-tab-jump].active") ||
       document.querySelector("[data-tab], [data-tab-target], [data-tab-jump]");
@@ -965,7 +958,7 @@
     }
   }
 
-  // Initialise add buttons AFTER DOM is ready
+  // Initialise add buttons
   function initAddButtons() {
     const addOutputBtn = $("#addOutput");
     if (addOutputBtn) {
@@ -1195,6 +1188,7 @@
           });
           if (val) t.isControl = true;
           renderTreatments();
+          renderDatabaseTags();
           calcAndRenderDebounced();
           return;
         } else if (tk === "replications") {
@@ -2359,6 +2353,7 @@
     }
   }
 
+  // ---------- PRINT AND COPILOT ----------
   function getPrintCss() {
     return `
       body{background:#fff;margin:0}
@@ -2373,785 +2368,163 @@
       .print-report .muted{color:#555}
       .print-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
       .print-small{font-size:12px}
-      .print-badge{display:inline-block;border:1px solid #ddd;border-radius:8px;padding:2px 8px;margin-left:6px}
-      @media print {.print-report img{page-break-inside:avoid}}
+      .print-badge{display:inline-block;border-radius:99px;border:1px solid #ccd;padding:2px 8px;font-size:11px;margin-left:6px}
     `;
   }
 
-  function exportPdf() {
-    drawHists();
-
-    const npvCan = document.getElementById("histNpv");
-    const bcrCan = document.getElementById("histBcr");
-    const npvImg = npvCan && npvCan.width ? npvCan.toDataURL("image/png") : null;
-    const bcrImg = bcrCan && bcrCan.width ? bcrCan.toDataURL("image/png") : null;
-
-    const s = buildSummaryForCsv();
-
-    const trRows = model.treatments
-      .map(t => {
-        const m = computeSingleTreatmentMetrics(
-          t,
-          model.time.discBase,
-          model.time.years,
-          model.adoption.base,
-          model.risk.base
-        );
-        const adopt = clamp(t.adoption * model.adoption.base, 0, 1);
-        const area = Number(t.area) || 0;
-        const annualCostPerHa =
-          (Number(t.materialsCost) || 0) +
-          (Number(t.servicesCost) || 0) ||
-          (Number(t.annualCost) || 0);
-        const annualCost = annualCostPerHa * area;
-        const annualBen = m.gm + annualCost;
-        return `
-          <tr>
-            <td>${esc(t.name)}${t.isControl ? " (Control)" : ""}</td>
-            <td>${fmt(area)}</td>
-            <td>${fmt(adopt)}</td>
-            <td>${money(annualBen)}</td>
-            <td>${money(annualCost)}</td>
-            <td>${money(m.pvBen)}</td>
-            <td>${money(m.pvCost)}</td>
-            <td>${isFinite(m.bcr) ? fmt(m.bcr) : "n/a"}</td>
-            <td>${money(m.npv)}</td>
-          </tr>`;
-      })
-      .join("");
-
-    const benRows = model.benefits
-      .map(
-        b => `
-      <tr>
-        <td>${esc(b.label)}</td>
-        <td>${b.category}</td>
-        <td>${esc(b.theme || "")}</td>
-        <td>${b.frequency}</td>
-        <td>${b.startYear || ""}</td>
-        <td>${b.endYear || ""}</td>
-        <td>${b.year || ""}</td>
-        <td>${b.unitValue || ""}</td>
-        <td>${b.quantity || ""}</td>
-        <td>${b.abatement || ""}</td>
-        <td>${b.annualAmount || ""}</td>
-        <td>${b.growthPct || ""}</td>
-        <td>${b.linkAdoption ? "Yes" : "No"}</td>
-        <td>${b.linkRisk ? "Yes" : "No"}</td>
-        <td>${b.p0 || ""}</td>
-        <td>${b.p1 || ""}</td>
-        <td>${b.consequence || ""}</td>
-        <td>${esc(b.notes || "")}</td>
-      </tr>`
-      )
-      .join("");
-
-    const now = new Date().toLocaleString();
-
-    const win = window.open("", "_blank");
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(
-      s.meta.name
-    )} - CBA Report</title>
-      <style>${getPrintCss()}</style></head><body>
-      <div class="print-report">
-        <div class="print-header">
-          <div class="print-logo">🚜🌾</div>
-          <div>
-            <h1>${esc(s.meta.name)} <span class="print-badge">CBA report</span></h1>
-            <div class="print-small muted">Generated ${esc(now)}</div>
-          </div>
-        </div>
-
-        <div class="print-cols">
-          <div>
-            <h2>Project</h2>
-            <table>
-              <tr><th>Project lead</th><td>${esc(s.meta.lead)}</td></tr>
-              <tr><th>Analysts</th><td>${esc(s.meta.analysts)}</td></tr>
-              <tr><th>Organisation</th><td>${esc(s.meta.organisation)}</td></tr>
-              <tr><th>Contact</th><td><a href="mailto:${esc(s.meta.contact)}">${esc(
-      s.meta.contact
-    )}</a>${s.meta.phone ? " / " + esc(s.meta.phone) : ""}</td></tr>
-              <tr><th>Last updated</th><td>${esc(s.meta.updated)}</td></tr>
-            </table>
-          </div>
-          <div>
-            <h2>Parameters</h2>
-            <table>
-              <tr><th>Analysis start year</th><td>${s.params.startYear}</td></tr>
-              <tr><th>Project start year</th><td>${s.params.projectStartYear}</td></tr>
-              <tr><th>Years</th><td>${s.params.years}</td></tr>
-              <tr><th>Discount (low/base/high)</th><td>${s.params.discountLow}% / ${s.params.discountBase}% / ${s.params.discountHigh}%</td></tr>
-              <tr><th>MIRR (finance/reinvest)</th><td>${s.params.mirrFinance}% / ${s.params.mirrReinvest}%</td></tr>
-              <tr><th>Adoption multiplier</th><td>${s.params.adoptionBase}</td></tr>
-              <tr><th>Risk (overall)</th><td>${s.params.riskBase}</td></tr>
-              <tr><th>BCR mode</th><td>${esc(s.params.bcrMode)}</td></tr>
-            </table>
-          </div>
-        </div>
-
-        <h2>Economic indicators</h2>
-        <table>
-          <tr><th>Present value of benefits</th><td>${money(s.results.pvBenefits)}</td></tr>
-          <tr><th>Present value of costs</th><td>${money(s.results.pvCosts)}</td></tr>
-          <tr><th>NPV</th><td>${money(s.results.npv)}</td></tr>
-          <tr><th>BCR</th><td>${isFinite(s.results.bcr) ? fmt(s.results.bcr) : "n/a"}</td></tr>
-          <tr><th>IRR</th><td>${isFinite(s.results.irrVal) ? percent(s.results.irrVal) : "n/a"}</td></tr>
-          <tr><th>MIRR</th><td>${isFinite(s.results.mirrVal) ? percent(s.results.mirrVal) : "n/a"}</td></tr>
-          <tr><th>ROI</th><td>${isFinite(s.results.roi) ? percent(s.results.roi) : "n/a"}</td></tr>
-          <tr><th>Gross margin (annual)</th><td>${money(s.results.annualGM)}</td></tr>
-          <tr><th>Gross profit margin</th><td>${isFinite(s.results.profitMargin) ? percent(
-      s.results.profitMargin
-    ) : "n/a"}</td></tr>
-          <tr><th>Payback (years)</th><td>${s.results.paybackYears ?? "Not reached"}</td></tr>
-        </table>
-
-        <h2>Treatments</h2>
-        <table>
-          <thead><tr>
-            <th>Treatment</th><th>Area</th><th>Adoption</th><th>Annual benefit</th><th>Annual cost</th>
-            <th>PV benefit</th><th>PV cost</th><th>BCR</th><th>NPV</th>
-          </tr></thead>
-          <tbody>${trRows}</tbody>
-        </table>
-
-        <h2>Additional benefits</h2>
-        <table>
-          <thead><tr>
-            <th>Label</th><th>Cat</th><th>Type</th><th>Freq</th><th>Start</th><th>End</th><th>Year</th>
-            <th>Unit value</th><th>Quantity</th><th>Abatement</th><th>Annual</th><th>Growth %</th>
-            <th>Adoption linked</th><th>Risk linked</th><th>P0</th><th>P1</th><th>Consequence</th><th>Notes</th>
-          </tr></thead>
-          <tbody>${benRows}</tbody>
-        </table>
-
-        <h2>Simulation highlights</h2>
-        <div class="print-cols">
-          <div>${npvImg ? `<img src="${npvImg}" style="width:100%;border:1px solid #ddd;border-radius:8px" />` : "<div class='muted'>NPV histogram not available.</div>"}</div>
-          <div>${bcrImg ? `<img src="${bcrImg}" style="width:100%;border:1px solid #ddd;border-radius:8px" />` : "<div class='muted'>BCR histogram not available.</div>"}</div>
-        </div>
-
-        <hr />
-        <div class="print-small muted">
-          Newcastle Business School • The University of Newcastle • Contact: <a href="mailto:${esc(
-            model.project.contactEmail
-          )}">${esc(model.project.contactEmail)}</a>
-        </div>
-      </div>
-    </body></html>`);
-    win.document.close();
-    setTimeout(() => {
-      win.focus();
-      win.print();
-    }, 300);
-  }
-
-  // ---------- EXCEL TEMPLATE AND IMPORT ----------
-  let parsedExcel = null;
-
-  async function handleParseExcel() {
-    const fileInput = $("#excelFile");
-    const status = $("#loadStatus");
-    const alertBox = $("#validation");
-    const preview = $("#preview");
-    const importBtn = $("#importExcel");
-
-    parsedExcel = null;
-    if (alertBox) {
-      alertBox.classList.remove("show");
-      alertBox.innerHTML = "";
-    }
-    if (preview) preview.innerHTML = "";
-    if (importBtn) importBtn.disabled = true;
-
-    const file = fileInput && fileInput.files && fileInput.files[0];
-    if (!file) {
-      if (status) status.textContent = "Select an Excel or CSV file first.";
-      return;
-    }
-    if (status) status.textContent = "Parsing file ...";
-
-    try {
-      const buf = await file.arrayBuffer();
-      let wb;
-      if (file.name.toLowerCase().endsWith(".csv")) {
-        const csvTxt = new TextDecoder().decode(new Uint8Array(buf));
-        const ws = XLSX.utils.csv_to_sheet(csvTxt);
-        wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Outputs");
-      } else {
-        wb = XLSX.read(buf, { type: "array" });
-      }
-
-      const getSheet = name => {
-        const s = wb.Sheets[name];
-        if (!s) return null;
-        return XLSX.utils.sheet_to_json(s, { defval: "", raw: true });
-      };
-
-      const outputs = getSheet("Outputs") || [];
-      const treatments = getSheet("Treatments") || [];
-      const costs = getSheet("Costs") || [];
-      const benefits = getSheet("Benefits") || [];
-
-      parsedExcel = { outputs, treatments, costs, benefits };
-
-      if (status) {
-        status.textContent =
-          "Parsed: " +
-          [outputs.length && "Outputs", treatments.length && "Treatments", costs.length && "Costs", benefits.length && "Benefits"]
-            .filter(Boolean)
-            .join(", ");
-      }
-
-      if (preview) {
-        const rows = [];
-        rows.push(
-          "<p><strong>Preview:</strong> " +
-            esc(file.name) +
-            " (" +
-            (outputs.length || 0) +
-            " outputs, " +
-            (treatments.length || 0) +
-            " treatments, " +
-            (costs.length || 0) +
-            " costs, " +
-            (benefits.length || 0) +
-            " benefits)</p>"
-        );
-        if (outputs.length) {
-          rows.push("<h4>Outputs (first 5)</h4>");
-          rows.push("<table class='small-table'><thead><tr>");
-          Object.keys(outputs[0]).forEach(k => {
-            rows.push("<th>" + esc(k) + "</th>");
-          });
-          rows.push("</tr></thead><tbody>");
-          outputs.slice(0, 5).forEach(r => {
-            rows.push("<tr>");
-            Object.keys(outputs[0]).forEach(k => {
-              rows.push("<td>" + esc(r[k]) + "</td>");
-            });
-            rows.push("</tr>");
-          });
-          rows.push("</tbody></table>");
-        }
-        if (treatments.length) {
-          rows.push("<h4>Treatments (first 5)</h4>");
-          rows.push("<table class='small-table'><thead><tr>");
-          Object.keys(treatments[0]).forEach(k => {
-            rows.push("<th>" + esc(k) + "</th>");
-          });
-          rows.push("</tr></thead><tbody>");
-          treatments.slice(0, 5).forEach(r => {
-            rows.push("<tr>");
-            Object.keys(treatments[0]).forEach(k => {
-              rows.push("<td>" + esc(r[k]) + "</td>");
-            });
-            rows.push("</tr>");
-          });
-          rows.push("</tbody></table>");
-        }
-        preview.innerHTML = rows.join("");
-      }
-
-      if (importBtn) importBtn.disabled = false;
-    } catch (err) {
-      console.error(err);
-      if (status) status.textContent = "Parsing failed.";
-      if (alertBox) {
-        alertBox.classList.add("show");
-        alertBox.textContent =
-          "Error while reading Excel file. Please check the format and try again.";
-      }
-    }
-  }
-
-  function commitExcelToModel() {
-    if (!parsedExcel) {
-      alert("Parse a file first, then import.");
-      return;
-    }
-    const { outputs, treatments, costs, benefits } = parsedExcel;
-
-    if (outputs && outputs.length) {
-      model.outputs = outputs.map(row => {
-        const keys = Object.keys(row).reduce((acc, k) => {
-          acc[k.toLowerCase()] = k;
-          return acc;
-        }, {});
-        const name = row[keys.name] || row[keys.output] || "";
-        const unit = row[keys.unit] || "";
-        const value =
-          Number(row[keys.valueperunit]) ||
-          Number(row[keys.value]) ||
-          Number(row["$/unit"]) ||
-          0;
-        const source = row[keys.source] || "Input Directly";
-        return {
-          id: uid(),
-          name: String(name || "").trim() || "Output",
-          unit: String(unit || "").trim() || "unit",
-          value: value || 0,
-          source
-        };
-      });
-    }
-
-    if (treatments && treatments.length) {
-      model.treatments = treatments.slice(0, 64).map(row => {
-        const keys = Object.keys(row).reduce((acc, k) => {
-          acc[k.toLowerCase()] = k;
-          return acc;
-        }, {});
-        const name = row[keys.name] || "Treatment";
-        const area = Number(row[keys.area]) || 0;
-        const adoption = Number(row[keys.adoption]) || 0.5;
-        const materialsCost = Number(row[keys.materialscost]) || 0;
-        const servicesCost = Number(row[keys.servicescost]) || 0;
-        const annualCost = Number(row[keys.annualcost]) || 0;
-        const capitalCost = Number(row[keys.capitalcost]) || 0;
-        const constrained = String(row[keys.constrained] || "")
-          .toLowerCase()
-          .startsWith("y");
-        const source = row[keys.source] || "Input Directly";
-        const notes = row[keys.notes] || "";
-        const tObj = {
-          id: uid(),
-          name: String(name || "").trim() || "Treatment",
-          area,
-          adoption,
-          deltas: {},
-          annualCost,
-          materialsCost,
-          servicesCost,
-          capitalCost,
-          constrained,
-          source,
-          replications: 1,
-          isControl: false,
-          notes
-        };
-        model.outputs.forEach(o => {
-          tObj.deltas[o.id] = 0;
-        });
-        return tObj;
-      });
-    }
-
-    if (costs && costs.length) {
-      model.otherCosts = costs.map(row => {
-        const keys = Object.keys(row).reduce((acc, k) => {
-          acc[k.toLowerCase()] = k;
-          return acc;
-        }, {});
-        return {
-          id: uid(),
-          label: row[keys.label] || "Cost item",
-          type: (row[keys.type] || "annual").toString().toLowerCase() === "capital"
-            ? "capital"
-            : "annual",
-          category: row[keys.category] || "Services",
-          annual: Number(row[keys.annual]) || 0,
-          startYear: Number(row[keys.startyear]) || model.time.startYear,
-          endYear: Number(row[keys.endyear]) || model.time.startYear,
-          capital: Number(row[keys.capital]) || 0,
-          year: Number(row[keys.year]) || model.time.startYear,
-          depMethod: (row[keys.depmethod] || "none").toString().toLowerCase(),
-          depLife: Number(row[keys.deplife]) || 5,
-          depRate: Number(row[keys.deprate]) || 30,
-          constrained: String(row[keys.constrained] || "")
-            .toLowerCase()
-            .startsWith("y")
-        };
-      });
-    }
-
-    if (benefits && benefits.length) {
-      model.benefits = benefits.map(row => {
-        const keys = Object.keys(row).reduce((acc, k) => {
-          acc[k.toLowerCase()] = k;
-          return acc;
-        }, {});
-        return {
-          id: uid(),
-          label: row[keys.label] || "Benefit",
-          category: row[keys.category] || "C4",
-          theme: row[keys.benefittype] || row[keys.theme] || "Other",
-          frequency: row[keys.frequency] || "Annual",
-          startYear: Number(row[keys.startyear]) || model.time.startYear,
-          endYear: Number(row[keys.endyear]) || model.time.startYear,
-          year: Number(row[keys.year]) || model.time.startYear,
-          unitValue: Number(row[keys.unitvalue]) || 0,
-          quantity: Number(row[keys.quantity]) || 0,
-          abatement: Number(row[keys.abatement]) || 0,
-          annualAmount: Number(row[keys.annualamount]) || 0,
-          growthPct: Number(row[keys.growthpct]) || 0,
-          linkAdoption: String(row[keys.linkadoption] || "")
-            .toLowerCase()
-            .startsWith("y"),
-          linkRisk: String(row[keys.linkrisk] || "")
-            .toLowerCase()
-            .startsWith("y"),
-          p0: Number(row[keys.p0]) || 0,
-          p1: Number(row[keys.p1]) || 0,
-          consequence: Number(row[keys.consequence]) || 0,
-          notes: row[keys.notes] || ""
-        };
-      });
-    }
-
-    initTreatmentDeltas();
-    renderAll();
-    calcAndRender();
-
-    const status = $("#loadStatus");
-    if (status) status.textContent = "Imported data from Excel into the model.";
-  }
-
-  function downloadExcelTemplate() {
-    if (!window.XLSX) {
-      alert("SheetJS (XLSX) script is not loaded.");
-      return;
-    }
-    const wb = XLSX.utils.book_new();
-
-    const outputsSheet = XLSX.utils.aoa_to_sheet([
-      ["Name", "Unit", "ValuePerUnit", "Source"],
-      ["Yield", "t/ha", 300, "Input Directly"],
-      ["Biomass", "t/ha", 40, "Input Directly"]
-    ]);
-    XLSX.utils.book_append_sheet(wb, outputsSheet, "Outputs");
-
-    const treatSheet = XLSX.utils.aoa_to_sheet([
-      [
-        "Name",
-        "Area",
-        "Adoption",
-        "MaterialsCost",
-        "ServicesCost",
-        "AnnualCost",
-        "CapitalCost",
-        "Constrained",
-        "Source",
-        "Notes"
-      ],
-      ["Optimized N", 300, 0.8, 20, 25, "", 5000, "Yes", "Farm Trials", ""]
-    ]);
-    XLSX.utils.book_append_sheet(wb, treatSheet, "Treatments");
-
-    const costSheet = XLSX.utils.aoa_to_sheet([
-      [
-        "Label",
-        "Type",
-        "Category",
-        "Annual",
-        "StartYear",
-        "EndYear",
-        "Capital",
-        "Year",
-        "DepMethod",
-        "DepLife",
-        "DepRate",
-        "Constrained"
-      ],
-      ["Project management and monitoring and evaluation", "annual", "Services", 20000, 2025, 2029, "", "", "none", 5, 30, "Yes"]
-    ]);
-    XLSX.utils.book_append_sheet(wb, costSheet, "Costs");
-
-    const benSheet = XLSX.utils.aoa_to_sheet([
-      [
-        "Label",
-        "Category",
-        "BenefitType",
-        "Frequency",
-        "StartYear",
-        "EndYear",
-        "Year",
-        "UnitValue",
-        "Quantity",
-        "Abatement",
-        "AnnualAmount",
-        "GrowthPct",
-        "LinkAdoption",
-        "LinkRisk",
-        "P0",
-        "P1",
-        "Consequence",
-        "Notes"
-      ],
-      [
-        "Reduced recurring costs (energy and water)",
-        "C4",
-        "Cost savings",
-        "Annual",
-        2025,
-        2029,
-        "",
-        "",
-        "",
-        "",
-        15000,
-        0,
-        "Yes",
-        "Yes",
-        "",
-        "",
-        "",
-        "Project wide operating cost saving"
-      ]
-    ]);
-    XLSX.utils.book_append_sheet(wb, benSheet, "Benefits");
-
-    saveWorkbook("farming_cba_template.xlsx", wb);
-  }
-
-  function downloadSampleDataset() {
-    if (!window.XLSX) {
-      alert("SheetJS (XLSX) script is not loaded.");
-      return;
-    }
-    const wb = XLSX.utils.book_new();
-
-    const outputsSheet = XLSX.utils.aoa_to_sheet([
-      ["Name", "Unit", "ValuePerUnit", "Source"],
-      ["Yield", "t/ha", 280, "Farm Trials"],
-      ["Protein", "percentage point", 10, "Farm Trials"],
-      ["Biomass", "t/ha", 35, "Farm Trials"]
-    ]);
-    XLSX.utils.book_append_sheet(wb, outputsSheet, "Outputs");
-
-    const treatSheet = XLSX.utils.aoa_to_sheet([
-      [
-        "Name",
-        "Area",
-        "Adoption",
-        "MaterialsCost",
-        "ServicesCost",
-        "AnnualCost",
-        "CapitalCost",
-        "Constrained",
-        "Source",
-        "Notes"
-      ],
-      ["Control", 500, 1, 0, 0, 0, 0, "Yes", "Farm Trials", "Baseline practice"],
-      ["Optimized N", 300, 0.8, 20, 25, "", 5000, "Yes", "Farm Trials", ""],
-      ["Slow release N", 200, 0.7, 15, 20, "", 0, "Yes", "ABARES", ""]
-    ]);
-    XLSX.utils.book_append_sheet(wb, treatSheet, "Treatments");
-
-    const costSheet = XLSX.utils.aoa_to_sheet([
-      [
-        "Label",
-        "Type",
-        "Category",
-        "Annual",
-        "StartYear",
-        "EndYear",
-        "Capital",
-        "Year",
-        "DepMethod",
-        "DepLife",
-        "DepRate",
-        "Constrained"
-      ],
-      ["Project management and monitoring and evaluation", "annual", "Services", 20000, 2025, 2029, "", "", "none", 5, 30, "Yes"],
-      ["Weather station", "capital", "Capital", "", "", "", 15000, 2025, "straight", 10, 0, "Yes"]
-    ]);
-    XLSX.utils.book_append_sheet(wb, costSheet, "Costs");
-
-    const benSheet = XLSX.utils.aoa_to_sheet([
-      [
-        "Label",
-        "Category",
-        "BenefitType",
-        "Frequency",
-        "StartYear",
-        "EndYear",
-        "Year",
-        "UnitValue",
-        "Quantity",
-        "Abatement",
-        "AnnualAmount",
-        "GrowthPct",
-        "LinkAdoption",
-        "LinkRisk",
-        "P0",
-        "P1",
-        "Consequence",
-        "Notes"
-      ],
-      [
-        "Reduced recurring costs (energy and water)",
-        "C4",
-        "Cost savings",
-        "Annual",
-        2025,
-        2029,
-        "",
-        "",
-        "",
-        "",
-        15000,
-        0,
-        "Yes",
-        "Yes",
-        "",
-        "",
-        "",
-        "Project wide operating cost saving"
-      ],
-      [
-        "Reduced risk of quality downgrades",
-        "C7",
-        "Risk reduction",
-        "Annual",
-        2025,
-        2034,
-        "",
-        "",
-        "",
-        "",
-        "",
-        0,
-        "Yes",
-        "No",
-        0.1,
-        0.07,
-        120000,
-        ""
-      ]
-    ]);
-    XLSX.utils.book_append_sheet(wb, benSheet, "Benefits");
-
-    saveWorkbook("farming_cba_sample.xlsx", wb);
-  }
-
-  // ---------- COPILOT SOFT INTEGRATION ----------
-  function showToast(message) {
-    const el = document.createElement("div");
-    el.className = "toast";
-    el.textContent = message;
-    document.body.appendChild(el);
-    requestAnimationFrame(() => el.classList.add("show"));
-    setTimeout(() => {
-      el.classList.remove("show");
-      setTimeout(() => el.remove(), 250);
-    }, 4200);
-  }
-
-  function buildCopilotPrompt() {
+  function buildPrintHtml() {
     const s = buildSummaryForCsv();
     const rate = model.time.discBase;
     const adoptMul = model.adoption.base;
     const risk = model.risk.base;
+    const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
 
-    const treatmentLines = model.treatments
-      .map(t => {
-        const m = computeSingleTreatmentMetrics(
-          t,
-          rate,
-          model.time.years,
-          adoptMul,
-          risk
-        );
-        const adopt = clamp(t.adoption * adoptMul, 0, 1);
-        const area = Number(t.area) || 0;
-        const annualCostPerHa =
-          (Number(t.materialsCost) || 0) +
-          (Number(t.servicesCost) || 0) ||
-          (Number(t.annualCost) || 0);
-        const annualCost = annualCostPerHa * area;
-        const annualBen = m.gm + annualCost;
+    return `
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Farming CBA report</title>
+        <style>${getPrintCss()}</style>
+      </head>
+      <body>
+        <div class="print-report">
+          <div class="print-header">
+            <div class="print-logo">🌾</div>
+            <div>
+              <h1>Farming CBA Decision Aid</h1>
+              <div class="print-small muted">${esc(s.meta.organisation || "")}</div>
+            </div>
+          </div>
 
-        return [
-          "Treatment: " + t.name + (t.isControl ? " (Control)" : ""),
-          "Area (ha): " + fmt(area),
-          "Adoption (effective): " + fmt(adopt),
-          "Annual benefit (farm level): " + money(annualBen),
-          "Annual cost (farm level): " + money(annualCost),
-          "Present value of benefits: " + money(m.pvBen),
-          "Present value of costs: " + money(m.pvCost),
-          "Benefit cost ratio: " + (isFinite(m.bcr) ? fmt(m.bcr) : "n/a"),
-          "Net present value: " + money(m.npv)
-        ].join("\n");
-      })
-      .join("\n\n");
+          <h2>Project</h2>
+          <table>
+            <tbody>
+              <tr><th>Project</th><td>${esc(s.meta.name || "")}</td></tr>
+              <tr><th>Lead</th><td>${esc(s.meta.lead || "")}</td></tr>
+              <tr><th>Analysts</th><td>${esc(s.meta.analysts || "")}</td></tr>
+              <tr><th>Organisation</th><td>${esc(s.meta.organisation || "")}</td></tr>
+              <tr><th>Contact</th><td>${esc(s.meta.contact || "")}</td></tr>
+              <tr><th>Last updated</th><td>${esc(s.meta.updated || "")}</td></tr>
+            </tbody>
+          </table>
 
-    const prompt = `
-You are assisting with the interpretation of an applied cost benefit analysis for an on farm nitrogen optimisation project.
+          <h2>Base case settings</h2>
+          <table>
+            <tbody>
+              <tr><th>Start year</th><td>${s.params.startYear}</td></tr>
+              <tr><th>Project start year</th><td>${s.params.projectStartYear}</td></tr>
+              <tr><th>Horizon (years)</th><td>${s.params.years}</td></tr>
+              <tr><th>Discount rate (base)</th><td>${s.params.discountBase}%</td></tr>
+              <tr><th>Adoption multiplier</th><td>${s.params.adoptionBase}</td></tr>
+              <tr><th>Overall risk</th><td>${s.params.riskBase}</td></tr>
+            </tbody>
+          </table>
 
-Project context:
-- Project name: ${s.meta.name}
-- Organisation: ${s.meta.organisation}
-- Project lead: ${s.meta.lead}
-- Analysts: ${s.meta.analysts}
-- Analysis start year: ${s.params.startYear}
-- Project start year: ${s.params.projectStartYear}
-- Time horizon (years after year 0): ${s.params.years}
+          <h2>Base case economic indicators</h2>
+          <table>
+            <tbody>
+              <tr><th>Present value of benefits</th><td>${money(all.pvBenefits)}</td></tr>
+              <tr><th>Present value of costs</th><td>${money(all.pvCosts)}</td></tr>
+              <tr><th>Net present value</th><td>${money(all.npv)}</td></tr>
+              <tr><th>Benefit cost ratio</th><td>${isFinite(all.bcr) ? fmt(all.bcr) : "n/a"}</td></tr>
+              <tr><th>Internal rate of return</th><td>${isFinite(all.irrVal) ? percent(all.irrVal) : "n/a"}</td></tr>
+              <tr><th>Modified internal rate of return</th><td>${isFinite(all.mirrVal) ? percent(all.mirrVal) : "n/a"}</td></tr>
+              <tr><th>Return on investment</th><td>${isFinite(all.roi) ? percent(all.roi) : "n/a"}</td></tr>
+              <tr><th>Annual gross margin</th><td>${money(all.annualGM)}</td></tr>
+              <tr><th>Gross profit margin</th><td>${isFinite(all.profitMargin) ? percent(all.profitMargin) : "n/a"}</td></tr>
+              <tr><th>Payback (years)</th><td>${all.paybackYears ?? "Not reached"}</td></tr>
+            </tbody>
+          </table>
 
-Core economic assumptions:
-- Discount rate (base): ${s.params.discountBase}%
-- Discount rate (low / high): ${s.params.discountLow}% / ${s.params.discountBase}% / ${s.params.discountHigh}%
-- MIRR finance / reinvest rates: ${s.params.mirrFinance}% / ${s.params.mirrReinvest}%
-- Adoption multiplier (base): ${s.params.adoptionBase}
-- Overall risk parameter: ${s.params.riskBase}
-- BCR denominator mode: ${s.params.bcrMode} (all costs vs constrained costs)
-
-Base case economic indicators (whole project):
-- Present value of benefits: ${money(s.results.pvBenefits)}
-- Present value of costs: ${money(s.results.pvCosts)}
-- Net present value: ${money(s.results.npv)}
-- Benefit cost ratio: ${isFinite(s.results.bcr) ? fmt(s.results.bcr) : "n/a"}
-- Internal rate of return: ${isFinite(s.results.irrVal) ? percent(s.results.irrVal) : "n/a"}
-- Modified internal rate of return: ${isFinite(s.results.mirrVal) ? percent(s.results.mirrVal) : "n/a"}
-- Return on investment: ${isFinite(s.results.roi) ? percent(s.results.roi) : "n/a"}
-- Annual gross margin: ${money(s.results.annualGM)}
-- Gross profit margin: ${isFinite(s.results.profitMargin) ? percent(s.results.profitMargin) : "n/a"}
-- Payback period (discounted years): ${s.results.paybackYears ?? "not reached within horizon"}
-
-Treatment level summary:
-${treatmentLines}
-
-Your task:
-1. Summarise in plain language what these indicators imply about the financial attractiveness and risk profile of the nitrogen optimisation project for a commercial farmer.
-2. Highlight which treatments appear most attractive and explain why, taking into account NPV, BCR, IRR, payback, and gross margin.
-3. Explain how changes in adoption, risk, and discount rates are likely to affect the overall conclusions.
-4. Provide a short briefing paragraph suitable for a farmer or agricultural policy audience, using non technical language while keeping the main numbers explicit.
-`;
-    return prompt.trim();
+          <p class="print-small muted">
+            Generated by the Farming CBA Decision Aid at ${new Date().toLocaleString()}.
+          </p>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
-  async function handleOpenCopilotClick() {
-    const promptText = buildCopilotPrompt();
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(promptText);
-        showToast(
-          "Prompt copied. Copilot has opened in a new tab. Paste with Ctrl+V (or Cmd+V) to start the analysis."
-        );
-      } else {
-        console.log(promptText);
-        alert(
-          "Your browser could not copy the prompt automatically. The prompt has been logged in the console; copy it manually, then paste into Copilot."
-        );
-      }
-    } catch (err) {
-      console.error("Clipboard error:", err);
-      alert(
-        "There was a problem copying the prompt. Open the browser console to copy it manually, then paste into Copilot."
-      );
+  function exportPdf() {
+    const html = buildPrintHtml();
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert("Popup blocked. Allow popups for this site to print the report.");
+      return;
     }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
 
-    window.open("https://copilot.microsoft.com/", "_blank", "noopener");
+  function buildCopilotSummary() {
+    const s = buildSummaryForCsv();
+    const r = s.results;
+    const lines = [
+      "Farming CBA Decision Aid structured summary.",
+      "",
+      `Project: ${s.meta.name}`,
+      `Lead: ${s.meta.lead}`,
+      `Organisation: ${s.meta.organisation}`,
+      "",
+      `Analysis start year: ${s.params.startYear}`,
+      `Horizon (years): ${s.params.years}`,
+      `Base discount rate: ${s.params.discountBase}`,
+      `Adoption multiplier: ${s.params.adoptionBase}`,
+      `Overall risk: ${s.params.riskBase}`,
+      "",
+      `Present value of benefits: ${r.pvBenefits}`,
+      `Present value of costs: ${r.pvCosts}`,
+      `Net present value: ${r.npv}`,
+      `Benefit cost ratio: ${r.bcr}`,
+      `Internal rate of return (percent): ${r.irrVal}`,
+      `Modified internal rate of return (percent): ${r.mirrVal}`,
+      `Return on investment (percent): ${r.roi}`,
+      `Annual gross margin: ${r.annualGM}`,
+      `Gross profit margin (percent): ${r.profitMargin}`,
+      `Payback (years): ${r.paybackYears ?? "Not reached"}`,
+      "",
+      "Please provide a plain language interpretation of these economic results for a farming audience."
+    ];
+    return lines.join("\n");
+  }
+
+  function handleOpenCopilotClick() {
+    const summary = buildCopilotSummary();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summary).catch(() => {
+        /* ignore */
+      });
+    }
+    const url = "https://copilot.microsoft.com/";
+    window.open(url, "_blank");
+  }
+
+  // ---------- EXCEL PLACEHOLDERS ----------
+  function handleParseExcel() {
+    alert("Excel parsing is not configured in this version.");
+  }
+
+  function commitExcelToModel() {
+    alert("Excel import is not configured in this version.");
+  }
+
+  function downloadExcelTemplate() {
+    alert("Excel template download is not configured in this version.");
+  }
+
+  function downloadSampleDataset() {
+    alert("Sample dataset download is not configured in this version.");
   }
 
   // ---------- INIT ----------
   document.addEventListener("DOMContentLoaded", () => {
     initTabs();
     bindBasics();
-    renderAll();
     initAddButtons();
+    renderAll();
     calcAndRender();
   });
 })();
