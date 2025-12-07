@@ -1,5 +1,5 @@
 // Farming CBA Tool - Newcastle Business School
-// Fully upgraded script with working tabs, CBA, simulation, exports, and Copilot helper
+// Fully upgraded script with working tabs, CBA, simulation, Excel import/exports, and Copilot helper
 
 (() => {
   "use strict";
@@ -165,14 +165,14 @@
         id: uid(),
         label: "Project management and monitoring and evaluation",
         type: "annual",
-        category: "Services",
+        category: "Capital",
         annual: 20000,
         startYear: new Date().getFullYear(),
         endYear: new Date().getFullYear() + 4,
-        capital: 0,
+        capital: 50000,
         year: new Date().getFullYear(),
         constrained: true,
-        depMethod: "none",
+        depMethod: "declining",
         depLife: 5,
         depRate: 30
       }
@@ -201,6 +201,8 @@
       varyInputCosts: false
     }
   };
+
+  let parsedExcel = null;
 
   function initTreatmentDeltas() {
     model.treatments.forEach(t => {
@@ -258,7 +260,6 @@
     toast.className = "toast";
     toast.textContent = message;
     root.appendChild(toast);
-    // force reflow
     void toast.offsetWidth;
     toast.classList.add("show");
     setTimeout(() => {
@@ -577,6 +578,7 @@
       if (!target) return;
       e.preventDefault();
       switchTab(target);
+      showToast(`Switched to ${target} tab.`);
     });
 
     const activeNav =
@@ -604,14 +606,20 @@
 
   function initActions() {
     document.addEventListener("click", e => {
-      if (e.target.closest("#recalc, #getResults, [data-action='recalc']")) {
-        e.preventDefault();
-        calcAndRender();
-      }
-      if (e.target.closest("#runSim, [data-action='run-sim']")) {
-        e.preventDefault();
-        runSimulation();
-      }
+      const el = e.target.closest("#recalc, #getResults, [data-action='recalc']");
+      if (!el) return;
+      e.preventDefault();
+      e.stopPropagation();
+      calcAndRender();
+      showToast("Base case economic indicators recalculated.");
+    });
+
+    document.addEventListener("click", e => {
+      const el = e.target.closest("#runSim, [data-action='run-sim']");
+      if (!el) return;
+      e.preventDefault();
+      e.stopPropagation();
+      runSimulation();
     });
   }
 
@@ -688,7 +696,8 @@
 
     const calcRiskBtn = $("#calcCombinedRisk");
     if (calcRiskBtn) {
-      calcRiskBtn.addEventListener("click", () => {
+      calcRiskBtn.addEventListener("click", e => {
+        e.stopPropagation();
         const r =
           1 -
           (1 - num("#rTech")) *
@@ -700,12 +709,14 @@
         if ($("#riskBase")) $("#riskBase").value = r.toFixed(3);
         model.risk.base = r;
         calcAndRender();
+        showToast("Combined risk updated from component risks.");
       });
     }
 
     const addCostBtn = $("#addCost");
     if (addCostBtn) {
-      addCostBtn.addEventListener("click", () => {
+      addCostBtn.addEventListener("click", e => {
+        e.stopPropagation();
         const c = {
           id: uid(),
           label: "New cost",
@@ -724,6 +735,7 @@
         model.otherCosts.push(c);
         renderCosts();
         calcAndRender();
+        showToast("New cost item added.");
       });
     }
 
@@ -896,7 +908,8 @@
 
     const saveProjectBtn = $("#saveProject");
     if (saveProjectBtn) {
-      saveProjectBtn.addEventListener("click", () => {
+      saveProjectBtn.addEventListener("click", e => {
+        e.stopPropagation();
         const data = JSON.stringify(model, null, 2);
         downloadFile(
           "cba_" + (model.project.name || "project").replace(/\s+/g, "_") + ".json",
@@ -910,7 +923,10 @@
     const loadProjectBtn = $("#loadProject");
     const loadFileInput = $("#loadFile");
     if (loadProjectBtn && loadFileInput) {
-      loadProjectBtn.addEventListener("click", () => loadFileInput.click());
+      loadProjectBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        loadFileInput.click();
+      });
       loadFileInput.addEventListener("change", async e => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
@@ -925,7 +941,7 @@
           renderAll();
           setBasicsFieldsFromModel();
           calcAndRender();
-          showToast("Project JSON loaded.");
+          showToast("Project JSON loaded and applied.");
         } catch (err) {
           alert("Invalid JSON file.");
           console.error(err);
@@ -937,27 +953,63 @@
 
     const exportCsvBtn = $("#exportCsv");
     const exportCsvFootBtn = $("#exportCsvFoot");
-    if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportAllCsv);
-    if (exportCsvFootBtn) exportCsvFootBtn.addEventListener("click", exportAllCsv);
+    if (exportCsvBtn) exportCsvBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      exportAllCsv();
+    });
+    if (exportCsvFootBtn) exportCsvFootBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      exportAllCsv();
+    });
 
     const exportPdfBtn = $("#exportPdf");
     const exportPdfFootBtn = $("#exportPdfFoot");
-    if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportPdf);
-    if (exportPdfFootBtn) exportPdfFootBtn.addEventListener("click", exportPdf);
+    if (exportPdfBtn)
+      exportPdfBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        exportPdf();
+        showToast("Print dialog opened for PDF export.");
+      });
+    if (exportPdfFootBtn)
+      exportPdfFootBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        exportPdf();
+        showToast("Print dialog opened for PDF export.");
+      });
 
     const parseExcelBtn = $("#parseExcel");
     const importExcelBtn = $("#importExcel");
-    if (parseExcelBtn) parseExcelBtn.addEventListener("click", handleParseExcel);
-    if (importExcelBtn) importExcelBtn.addEventListener("click", commitExcelToModel);
+    if (parseExcelBtn)
+      parseExcelBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        handleParseExcel();
+      });
+    if (importExcelBtn)
+      importExcelBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        commitExcelToModel();
+      });
 
     const downloadTemplateBtn = $("#downloadTemplate");
     const downloadSampleBtn = $("#downloadSample");
-    if (downloadTemplateBtn) downloadTemplateBtn.addEventListener("click", downloadExcelTemplate);
-    if (downloadSampleBtn) downloadSampleBtn.addEventListener("click", downloadSampleDataset);
+    if (downloadTemplateBtn)
+      downloadTemplateBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        downloadExcelTemplate();
+      });
+    if (downloadSampleBtn)
+      downloadSampleBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        downloadSampleDataset();
+      });
 
     const startBtn = $("#startBtn");
     if (startBtn) {
-      startBtn.addEventListener("click", () => switchTab("project"));
+      startBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        switchTab("project");
+        showToast("Welcome. Start with the Project tab.");
+      });
     }
 
     const openCopilotBtns = $$("#openCopilot");
@@ -965,6 +1017,7 @@
       openCopilotBtns.forEach(btn => {
         btn.addEventListener("click", e => {
           e.preventDefault();
+          e.stopPropagation();
           handleOpenCopilotClick();
         });
       });
@@ -975,7 +1028,8 @@
   function initAddButtons() {
     const addOutputBtn = $("#addOutput");
     if (addOutputBtn) {
-      addOutputBtn.addEventListener("click", () => {
+      addOutputBtn.addEventListener("click", e => {
+        e.stopPropagation();
         const id = uid();
         model.outputs.push({
           id,
@@ -991,12 +1045,14 @@
         renderTreatments();
         renderDatabaseTags();
         calcAndRender();
+        showToast("New output metric added.");
       });
     }
 
     const addTreatmentBtn = $("#addTreatment");
     if (addTreatmentBtn) {
-      addTreatmentBtn.addEventListener("click", () => {
+      addTreatmentBtn.addEventListener("click", e => {
+        e.stopPropagation();
         if (model.treatments.length >= 64) {
           alert("Maximum of 64 treatments reached.");
           return;
@@ -1024,12 +1080,14 @@
         renderTreatments();
         renderDatabaseTags();
         calcAndRender();
+        showToast("New treatment added.");
       });
     }
 
     const addBenefitBtn = $("#addBenefit");
     if (addBenefitBtn) {
-      addBenefitBtn.addEventListener("click", () => {
+      addBenefitBtn.addEventListener("click", e => {
+        e.stopPropagation();
         model.benefits.push({
           id: uid(),
           label: "New benefit",
@@ -1053,6 +1111,7 @@
         });
         renderBenefits();
         calcAndRender();
+        showToast("New benefit item added.");
       });
     }
   }
@@ -1116,6 +1175,7 @@
     renderTreatments();
     renderDatabaseTags();
     calcAndRender();
+    showToast("Output metric removed.");
   }
 
   function renderTreatments() {
@@ -1202,6 +1262,7 @@
           if (val) t.isControl = true;
           renderTreatments();
           calcAndRenderDebounced();
+          showToast(`Control treatment set to ${t.name}.`);
           return;
         } else if (tk === "replications") {
           t[tk] = Math.max(1, Math.round(+e.target.value || 1));
@@ -1221,6 +1282,7 @@
       renderTreatments();
       renderDatabaseTags();
       calcAndRender();
+      showToast("Treatment removed.");
     });
   }
 
@@ -1321,6 +1383,7 @@
       model.benefits = model.benefits.filter(x => x.id !== id);
       renderBenefits();
       calcAndRender();
+      showToast("Benefit item removed.");
     });
   }
 
@@ -1394,6 +1457,7 @@
       model.otherCosts = model.otherCosts.filter(x => x.id !== id);
       renderCosts();
       calcAndRender();
+      showToast("Cost item removed.");
     });
   }
 
@@ -1614,11 +1678,9 @@
     const rows = [];
 
     model.otherCosts.forEach(c => {
-      if (c.type !== "capital") return;
       const method = c.depMethod || "none";
-      if (method === "none") return;
       const cost = Number(c.capital) || 0;
-      if (!cost) return;
+      if (method === "none" || !cost) return;
       const life = Math.max(1, Number(c.depLife) || 5);
       const rate = Number(c.depRate) || 30;
       const startIndex = (Number(c.year) || baseYear) - baseYear;
@@ -1791,7 +1853,7 @@
         "#roiControl",
         "#paybackControl",
         "#gmControl"
-      ].forEach(sel => setVal(sel, "n/a"));
+      ].forEach(sel => setVal(sel, "No control selected"));
     }
     if (treatMetrics) {
       setVal("#pvBenefitsTreat", money(treatMetrics.pvBen));
@@ -1926,6 +1988,7 @@
     if (status) status.textContent = "Done.";
     renderSimulationResults();
     drawHists();
+    showToast("Monte Carlo simulation completed. Review results in the Simulation tab.");
   }
 
   function renderSimulationResults() {
@@ -1967,7 +2030,7 @@
     setVal("#simBcrProbTarget", fmt(pBt) + "%");
   }
 
-  function drawHist(canvasId, data, bins = 24, labelFmt = v => v.toFixed(0)) {
+  function drawHist(canvasId, data, bins = 24, labelFmt = v => v.toFixed(0), titleText = "") {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !data || !data.length) return;
     const ctx = canvas.getContext("2d");
@@ -1977,8 +2040,8 @@
     const max = Math.max(...data);
     const padL = 54;
     const padR = 14;
-    const padT = 10;
-    const padB = 34;
+    const padT = 24;
+    const padB = 40;
     const W = canvas.width - padL - padR;
     const H = canvas.height - padT - padB;
 
@@ -2004,7 +2067,7 @@
       const x = padL + (i * W) / bins + 1;
       const h = (counts[i] / maxC) * (H - 2);
       const y = padT + H - h;
-      ctx.fillStyle = "rgba(116, 209, 140, 0.45)";
+      ctx.fillStyle = "rgba(116, 209, 140, 0.65)";
       ctx.fillRect(x, y, W / bins - 2, h);
     }
 
@@ -2014,19 +2077,30 @@
     const lbls = [min, (min + max) / 2, max];
     [0, 0.5, 1].forEach((p, i) => {
       const x = padL + p * W;
-      ctx.fillText(labelFmt(lbls[i]), x, padT + H + 20);
+      ctx.fillText(labelFmt(lbls[i]), x, padT + H + 22);
     });
+
+    ctx.textAlign = "center";
+    if (titleText) {
+      ctx.fillText(titleText, padL + W / 2, padT - 8);
+    }
+    ctx.save();
+    ctx.translate(12, padT + H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText("Frequency", 0, 0);
+    ctx.restore();
   }
 
   function drawHists() {
     const { npv, bcr } = model.sim.results;
-    if (npv && npv.length) drawHist("histNpv", npv, 24, v => money(v));
+    if (npv && npv.length) drawHist("histNpv", npv, 24, v => v.toFixed(0), "Distribution of NPV");
     if (bcr && bcr.length)
       drawHist(
         "histBcr",
         bcr.filter(x => isFinite(x)),
         24,
-        v => v.toFixed(2)
+        v => v.toFixed(2),
+        "Distribution of BCR"
       );
   }
 
@@ -2038,8 +2112,8 @@
 
     const padL = 60;
     const padR = 16;
-    const padT = 10;
-    const padB = 34;
+    const padT = 24;
+    const padB = 40;
     const W = canvas.width - padL - padR;
     const H = canvas.height - padT - padB;
 
@@ -2086,12 +2160,21 @@
     ctx.textAlign = "center";
     xs.forEach(xv => {
       const x = xScale(xv);
-      ctx.fillText(String(xv), x, padT + H + 18);
+      ctx.fillText(String(xv), x, padT + H + 20);
     });
     ctx.textAlign = "right";
     ctx.fillText(money(yMax), padL - 6, yScale(yMax) + 4);
     ctx.fillText(money(0), padL - 6, zeroY + 4);
     ctx.fillText(money(yMin), padL - 6, yScale(yMin) + 4);
+
+    ctx.textAlign = "center";
+    ctx.fillText("Years of analysis", padL + W / 2, padT + H + 36);
+    ctx.save();
+    ctx.translate(16, padT + H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText("Net present value", 0, 0);
+    ctx.restore();
+    ctx.fillText("NPV by horizon", padL + W / 2, padT - 8);
   }
 
   // ---------- EXPORTS ----------
@@ -2112,6 +2195,15 @@
   function downloadFile(filename, text, mime = "text/csv") {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function downloadBinaryFile(filename, data, mime) {
+    const a = document.createElement("a");
+    const blob = new Blob([data], { type: mime });
+    a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
@@ -2283,25 +2375,395 @@
     model.outputs.forEach(o => outRows.push([o.name, o.unit, o.value, o.source, o.id]));
     downloadFile("cba_outputs_" + slug(s.meta.name) + ".csv", toCsv(outRows));
 
-    showToast("CSV exports downloaded.");
+    showToast("CSV summary and detail exports downloaded.");
   }
 
   function exportPdf() {
     window.print();
   }
 
-  // ---------- EXCEL STUBS (SAFE NO-OPS FOR NOW) ----------
+  // ---------- EXCEL IMPORT / EXPORT ----------
+  function ensureXlsxAvailable() {
+    if (typeof XLSX === "undefined") {
+      showToast("Excel library is not loaded. Include XLSX in the HTML to use Excel features.");
+      return false;
+    }
+    return true;
+  }
+
+  function createExcelInput() {
+    let input = document.getElementById("excelFile");
+    if (!input) {
+      input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".xlsx,.xls,.csv";
+      input.id = "excelFile";
+      input.style.display = "none";
+      document.body.appendChild(input);
+    }
+    return input;
+  }
+
   function handleParseExcel() {
-    showToast("Excel parsing is not wired for this version of the tool.");
+    if (!ensureXlsxAvailable()) return;
+    const input = createExcelInput();
+    input.onchange = e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          const data = evt.target.result;
+          const wb = XLSX.read(data, { type: "array" });
+          const res = {};
+          const getSheet = name =>
+            wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "" }) : [];
+
+          res.meta = getSheet("Meta");
+          res.outputs = getSheet("Outputs");
+          res.treatments = getSheet("Treatments");
+          res.benefits = getSheet("Benefits");
+          res.costs = getSheet("Costs");
+
+          parsedExcel = res;
+          const nOut = res.outputs.length || 0;
+          const nTreat = res.treatments.length || 0;
+          const nBen = res.benefits.length || 0;
+          const nCost = res.costs.length || 0;
+          showToast(
+            `Excel parsed successfully: ${nOut} outputs, ${nTreat} treatments, ${nBen} benefits, ${nCost} cost items ready to import.`
+          );
+        } catch (err) {
+          console.error(err);
+          showToast("Could not parse Excel file. Check that the template structure is correct.");
+        } finally {
+          e.target.value = "";
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    input.click();
   }
+
   function commitExcelToModel() {
-    showToast("Excel import is not wired for this version of the tool.");
+    if (!parsedExcel) {
+      showToast("No parsed Excel data found. Click Parse Excel first.");
+      return;
+    }
+    const data = parsedExcel;
+    const now = new Date().getFullYear();
+
+    // Meta (optional)
+    if (data.meta && data.meta.length) {
+      const mrow = data.meta[0];
+      if (mrow.ProjectName) model.project.name = mrow.ProjectName;
+      if (mrow.ProjectLead) model.project.lead = mrow.ProjectLead;
+      if (mrow.Analysts) model.project.analysts = mrow.Analysts;
+      if (mrow.Team) model.project.team = mrow.Team;
+      if (mrow.Organisation) model.project.organisation = mrow.Organisation;
+      if (mrow.ContactEmail) model.project.contactEmail = mrow.ContactEmail;
+      if (mrow.ContactPhone) model.project.contactPhone = mrow.ContactPhone;
+      if (mrow.Summary) model.project.summary = mrow.Summary;
+      model.project.lastUpdated = new Date().toISOString().slice(0, 10);
+    }
+
+    // Outputs
+    if (data.outputs && data.outputs.length) {
+      model.outputs = data.outputs.map(row => ({
+        id: uid(),
+        name: row.Name || row.Output || "Output",
+        unit: row.Unit || "unit",
+        value:
+          Number(row.ValuePerUnit ?? row.Value ?? row["$ per unit"] ?? row.Price ?? 0) || 0,
+        source: row.Source || "Input Directly"
+      }));
+    }
+
+    // Treatments
+    const outputNameToId = {};
+    model.outputs.forEach(o => {
+      outputNameToId[o.name.toLowerCase()] = o.id;
+    });
+
+    if (data.treatments && data.treatments.length) {
+      model.treatments = data.treatments.map(row => {
+        const t = {
+          id: uid(),
+          name: row.Name || "Treatment",
+          area: Number(row.AreaHa ?? row["Area (ha)"] ?? 0) || 0,
+          adoption: Number(row.Adoption ?? row["Adoption (0-1)"] ?? 1) || 1,
+          deltas: {},
+          annualCost: Number(row.AnnualCostPerHa ?? row["AnnualCostPerHa"] ?? 0) || 0,
+          materialsCost: Number(row.MaterialsCostPerHa ?? 0) || 0,
+          servicesCost: Number(row.ServicesCostPerHa ?? 0) || 0,
+          capitalCost: Number(row.CapitalCost ?? row.Capital ?? 0) || 0,
+          constrained: String(row.Constrained ?? "Yes").toLowerCase().startsWith("y"),
+          source: row.Source || "Input Directly",
+          replications: Math.max(1, Number(row.Replications ?? 1) || 1),
+          isControl:
+            String(row.IsControl ?? row.Control ?? "").toLowerCase().startsWith("y") ||
+            row.IsControl === 1,
+          notes: row.Notes || ""
+        };
+
+        Object.keys(row).forEach(key => {
+          const m = key.match(/^Delta[_:\s]*(.+)$/i);
+          if (m) {
+            const outName = m[1].trim().toLowerCase();
+            const id = outputNameToId[outName];
+            if (id) {
+              t.deltas[id] = Number(row[key] || 0) || 0;
+            }
+          }
+        });
+
+        model.outputs.forEach(o => {
+          if (!(o.id in t.deltas)) t.deltas[o.id] = 0;
+        });
+        return t;
+      });
+    } else {
+      initTreatmentDeltas();
+    }
+
+    // Benefits
+    if (data.benefits && data.benefits.length) {
+      model.benefits = data.benefits.map(row => ({
+        id: uid(),
+        label: row.Label || "Benefit",
+        category: row.Category || "C4",
+        theme: row.BenefitType || row.Theme || "Other",
+        frequency: row.Frequency || "Annual",
+        startYear: Number(row.StartYear || now) || now,
+        endYear: Number(row.EndYear || now) || now,
+        year: Number(row.Year || row.OnceYear || now) || now,
+        unitValue: Number(row.UnitValue || 0) || 0,
+        quantity: Number(row.Quantity || 0) || 0,
+        abatement: Number(row.Abatement || 0) || 0,
+        annualAmount: Number(row.AnnualAmount || 0) || 0,
+        growthPct: Number(row.GrowthPct || 0) || 0,
+        linkAdoption:
+          String(row.LinkAdoption ?? "true").toLowerCase().startsWith("t") ||
+          String(row.LinkAdoption ?? "true").toLowerCase().startsWith("y"),
+        linkRisk:
+          String(row.LinkRisk ?? "true").toLowerCase().startsWith("t") ||
+          String(row.LinkRisk ?? "true").toLowerCase().startsWith("y"),
+        p0: Number(row.P0 || 0) || 0,
+        p1: Number(row.P1 || 0) || 0,
+        consequence: Number(row.Consequence || 0) || 0,
+        notes: row.Notes || ""
+      }));
+    }
+
+    // Costs
+    if (data.costs && data.costs.length) {
+      model.otherCosts = data.costs.map(row => ({
+        id: uid(),
+        label: row.Label || "Cost item",
+        type: (row.Type || "annual").toString().toLowerCase() === "capital" ? "capital" : "annual",
+        category: row.Category || "Services",
+        annual: Number(row.Annual || 0) || 0,
+        startYear: Number(row.StartYear || now) || now,
+        endYear: Number(row.EndYear || now) || now,
+        capital: Number(row.Capital || 0) || 0,
+        year: Number(row.Year || now) || now,
+        constrained:
+          String(row.Constrained ?? "true").toLowerCase().startsWith("t") ||
+          String(row.Constrained ?? "true").toLowerCase().startsWith("y"),
+        depMethod: (row.DepMethod || "none").toString().toLowerCase(),
+        depLife: Number(row.DepLife || 5) || 5,
+        depRate: Number(row.DepRate || 30) || 30
+      }));
+    }
+
+    initTreatmentDeltas();
+    renderAll();
+    setBasicsFieldsFromModel();
+    calcAndRender();
+    showToast("Excel data imported into the model. Results updated.");
+    parsedExcel = null;
   }
+
+  function buildTemplateWorkbook(includeSampleRows) {
+    const wb = XLSX.utils.book_new();
+
+    const metaRows = [
+      [
+        "ProjectName",
+        "ProjectLead",
+        "Analysts",
+        "Team",
+        "Organisation",
+        "ContactEmail",
+        "ContactPhone",
+        "Summary"
+      ]
+    ];
+    if (includeSampleRows) {
+      metaRows.push([
+        model.project.name,
+        model.project.lead,
+        model.project.analysts,
+        model.project.team,
+        model.project.organisation,
+        model.project.contactEmail,
+        model.project.contactPhone,
+        model.project.summary
+      ]);
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metaRows), "Meta");
+
+    const outHeader = ["Name", "Unit", "ValuePerUnit", "Source"];
+    const outAoA = [outHeader];
+    if (includeSampleRows) {
+      model.outputs.forEach(o => {
+        outAoA.push([o.name, o.unit, o.value, o.source]);
+      });
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(outAoA), "Outputs");
+
+    const baseTreatColumns = [
+      "Name",
+      "AreaHa",
+      "Adoption",
+      "Replications",
+      "MaterialsCostPerHa",
+      "ServicesCostPerHa",
+      "AnnualCostPerHa",
+      "CapitalCost",
+      "IsControl",
+      "Constrained",
+      "Source",
+      "Notes"
+    ];
+    const deltaCols = model.outputs.map(o => "Delta_" + o.name);
+    const treatHeader = baseTreatColumns.concat(deltaCols);
+    const treatAoA = [treatHeader];
+    if (includeSampleRows) {
+      model.treatments.forEach(t => {
+        const baseRow = [
+          t.name,
+          t.area,
+          t.adoption,
+          t.replications || 1,
+          t.materialsCost || 0,
+          t.servicesCost || 0,
+          t.annualCost || 0,
+          t.capitalCost || 0,
+          t.isControl ? "Yes" : "No",
+          t.constrained ? "Yes" : "No",
+          t.source,
+          t.notes || ""
+        ];
+        const deltasRow = model.outputs.map(o => t.deltas[o.id] ?? 0);
+        treatAoA.push(baseRow.concat(deltasRow));
+      });
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(treatAoA), "Treatments");
+
+    const benHeader = [
+      "Label",
+      "Category",
+      "BenefitType",
+      "Frequency",
+      "StartYear",
+      "EndYear",
+      "Year",
+      "UnitValue",
+      "Quantity",
+      "Abatement",
+      "AnnualAmount",
+      "GrowthPct",
+      "LinkAdoption",
+      "LinkRisk",
+      "P0",
+      "P1",
+      "Consequence",
+      "Notes"
+    ];
+    const benAoA = [benHeader];
+    if (includeSampleRows) {
+      model.benefits.forEach(b => {
+        benAoA.push([
+          b.label,
+          b.category,
+          b.theme || "",
+          b.frequency,
+          b.startYear,
+          b.endYear,
+          b.year,
+          b.unitValue,
+          b.quantity,
+          b.abatement,
+          b.annualAmount,
+          b.growthPct,
+          b.linkAdoption ? "Yes" : "No",
+          b.linkRisk ? "Yes" : "No",
+          b.p0,
+          b.p1,
+          b.consequence,
+          b.notes || ""
+        ]);
+      });
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(benAoA), "Benefits");
+
+    const costHeader = [
+      "Label",
+      "Type",
+      "Category",
+      "Annual",
+      "StartYear",
+      "EndYear",
+      "Capital",
+      "Year",
+      "DepMethod",
+      "DepLife",
+      "DepRate",
+      "Constrained"
+    ];
+    const costAoA = [costHeader];
+    if (includeSampleRows) {
+      model.otherCosts.forEach(c => {
+        costAoA.push([
+          c.label,
+          c.type,
+          c.category,
+          c.annual,
+          c.startYear,
+          c.endYear,
+          c.capital,
+          c.year,
+          c.depMethod,
+          c.depLife,
+          c.depRate,
+          c.constrained ? "Yes" : "No"
+        ]);
+      });
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(costAoA), "Costs");
+
+    return wb;
+  }
+
   function downloadExcelTemplate() {
-    showToast("Excel template is not configured in this version.");
+    if (!ensureXlsxAvailable()) return;
+    const wb = buildTemplateWorkbook(false);
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadBinaryFile("farming_cba_template.xlsx", wbout, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    showToast("Excel template downloaded. Use this structure for imports.");
   }
+
   function downloadSampleDataset() {
-    showToast("Sample dataset download is not configured in this version.");
+    if (!ensureXlsxAvailable()) return;
+    const wb = buildTemplateWorkbook(true);
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadBinaryFile(
+      "farming_cba_sample_australia.xlsx",
+      wbout,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    showToast("Sample Excel dataset downloaded using a realistic Australian nitrogen trial scenario.");
   }
 
   // ---------- COPILOT HELPER ----------
@@ -2328,46 +2790,138 @@
     }
   }
 
-  function handleOpenCopilotClick() {
-    calcAndRender(); // make sure results are fresh
+  function buildScenarioForCopilot() {
     const summary = buildSummaryForCsv();
-    const sim = model.sim.results || {};
-    const scenario = {
+    const base = summary.results;
+
+    const rate = model.time.discBase;
+    const adoptMul = model.adoption.base;
+    const risk = model.risk.base;
+
+    const treatmentSummaries = model.treatments.slice(0, 10).map(t => {
+      const m = computeSingleTreatmentMetrics(
+        t,
+        rate,
+        model.time.years,
+        adoptMul,
+        risk
+      );
+      return {
+        name: t.name,
+        areaHa: t.area,
+        adoption: t.adoption,
+        replications: t.replications || 1,
+        isControl: !!t.isControl,
+        pvBenefits: m.pvBen,
+        pvCosts: m.pvCost,
+        npv: m.npv,
+        bcr: m.bcr,
+        irr: m.irrVal,
+        paybackYears: m.pb
+      };
+    });
+
+    const npvArr = model.sim.results.npv || [];
+    const bcrArr = model.sim.results.bcr || [];
+    let simSummary = null;
+    if (npvArr.length) {
+      const sortedNpv = [...npvArr].sort((a, b) => a - b);
+      const N = sortedNpv.length;
+      const meanNpv = sortedNpv.reduce((a, c) => a + c, 0) / N;
+      const medianNpv =
+        (sortedNpv[Math.floor((N - 1) / 2)] + sortedNpv[Math.ceil((N - 1) / 2)]) / 2;
+      const npvMin = sortedNpv[0];
+      const npvMax = sortedNpv[sortedNpv.length - 1];
+      const probPosNpv = npvArr.filter(v => v > 0).length / N;
+
+      const validBcr = bcrArr.filter(x => isFinite(x));
+      let bcrMin = null;
+      let bcrMax = null;
+      let bcrMean = null;
+      let bcrMedian = null;
+      let probBcrAbove1 = null;
+      let probBcrAboveTarget = null;
+      if (validBcr.length) {
+        const sortedBcr = [...validBcr].sort((a, b) => a - b);
+        const NB = sortedBcr.length;
+        bcrMin = sortedBcr[0];
+        bcrMax = sortedBcr[NB - 1];
+        bcrMean = sortedBcr.reduce((a, c) => a + c, 0) / NB;
+        bcrMedian =
+          (sortedBcr[Math.floor((NB - 1) / 2)] + sortedBcr[Math.ceil((NB - 1) / 2)]) / 2;
+        probBcrAbove1 = validBcr.filter(x => x > 1).length / NB;
+        probBcrAboveTarget = validBcr.filter(x => x > model.sim.targetBCR).length / NB;
+      }
+
+      simSummary = {
+        runs: N,
+        discountLow: model.time.discLow,
+        discountBase: model.time.discBase,
+        discountHigh: model.time.discHigh,
+        adoptionLow: model.adoption.low,
+        adoptionBase: model.adoption.base,
+        adoptionHigh: model.adoption.high,
+        riskLow: model.risk.low,
+        riskBase: model.risk.base,
+        riskHigh: model.risk.high,
+        npvMin,
+        npvMax,
+        npvMean: meanNpv,
+        npvMedian: medianNpv,
+        probNpvPositive: probPosNpv,
+        bcrMin,
+        bcrMax,
+        bcrMean,
+        bcrMedian,
+        probBcrAbove1,
+        probBcrAboveTarget: probBcrAboveTarget,
+        targetBCR: model.sim.targetBCR
+      };
+    }
+
+    return {
       project: summary.meta,
       parameters: summary.params,
       baseCase: {
-        pvBenefits: summary.results.pvBenefits,
-        pvCosts: summary.results.pvCosts,
-        npv: summary.results.npv,
-        bcr: summary.results.bcr,
-        irr: summary.results.irrVal,
-        mirr: summary.results.mirrVal,
-        roi: summary.results.roi,
-        annualGrossMargin: summary.results.annualGM,
-        profitMargin: summary.results.profitMargin,
-        paybackYears: summary.results.paybackYears
+        pvBenefits: base.pvBenefits,
+        pvCosts: base.pvCosts,
+        npv: base.npv,
+        bcr: base.bcr,
+        irr: base.irrVal,
+        mirr: base.mirrVal,
+        roi: base.roi,
+        annualGrossMargin: base.annualGM,
+        profitMargin: base.profitMargin,
+        paybackYears: base.paybackYears
       },
-      simulation: {
-        n: model.sim.n,
-        targetBCR: model.sim.targetBCR,
-        npvResults: sim.npv || [],
-        bcrResults: sim.bcr || []
-      }
+      treatmentSummaries,
+      simulationSummary: simSummary
     };
+  }
 
-    const scenarioJson = JSON.stringify(scenario, null, 2);
+  function handleOpenCopilotClick() {
+    calcAndRender();
+    const scenario = buildScenarioForCopilot();
+    let scenarioJson = JSON.stringify(scenario, null, 2);
+    const maxJsonChars = 5000;
+    if (scenarioJson.length > maxJsonChars) {
+      scenarioJson = scenarioJson.slice(0, maxJsonChars) + "\n... (scenario truncated to fit character limits)";
+    }
 
     const promptText =
 `You are an agricultural economics assistant helping to interpret a cost benefit analysis for a farming project.
 
-Using the JSON scenario below, produce a clear policy briefing that:
-1. Summarises the project context, objectives, and key assumptions.
-2. Explains the base case results for present value of benefits and costs, net present value, benefit cost ratio, internal rate of return, modified IRR, return on investment, annual gross margin, profit margin, and payback period.
-3. Interprets any Monte Carlo simulation outputs, focusing on the probability that NPV is positive and that BCR exceeds 1 and the specified target threshold.
-4. Provides a short narrative on risk, adoption, and implementation considerations for decision makers.
-5. Presents a concise recommendation on whether the project is economically attractive and under what conditions.
+Using the JSON scenario below, write a clear and accessible policy briefing for decision makers in agriculture and natural resource management in Australia. Structure the briefing in well separated sections with short headings, such as: Project context, Methods and assumptions, Base case economic results, Risk and uncertainty, Adoption and implementation issues, and Policy conclusions.
 
-Use tables where useful, keep the language accessible for policy makers, and express all monetary quantities in the same currency as the input.
+Explain in plain language what the project does, why it matters, and how the cost benefit analysis was carried out. Describe the main economic indicators including present value of benefits and costs, net present value, benefit cost ratio, internal rate of return, modified internal rate of return, return on investment, annual gross margin, profit margin, and payback period. Interpret the results for each indicator in words that a nontechnical reader can understand.
+
+If simulation results are available, summarise what they show about the probability that net present value is positive, the probability that the benefit cost ratio is above 1, and the probability that it is above the target threshold. Explain what these probabilities mean in practical terms.
+
+Discuss how adoption, risk, and implementation constraints could influence the results, and outline any important distributional or implementation considerations that policy makers should be aware of.
+
+Conclude with a clear recommendation on whether the project appears economically attractive, under what conditions it is most attractive, and what further evidence or monitoring might be useful.
+
+Write only in paragraphs with no bullet points or numbered lists. Use professional but lay friendly language. Aim for the level of detail that would correspond to roughly three to five pages of text. You may include self contained tables if they help to present the main numbers clearly.
 
 SCENARIO JSON:
 \`\`\`json
@@ -2377,9 +2931,9 @@ ${scenarioJson}
 
     copyToClipboard(promptText).then(ok => {
       if (ok) {
-        showToast("CBA summary and Copilot prompt copied. Opening Copilot in a new tab.");
+        showToast("Copilot briefing prompt copied. A new Copilot tab will open.");
       } else {
-        showToast("Could not copy to clipboard automatically. You may need to copy manually.");
+        showToast("Could not copy automatically. Use the Copilot tab to copy the text manually.");
       }
       window.open("https://copilot.microsoft.com/", "_blank");
     });
