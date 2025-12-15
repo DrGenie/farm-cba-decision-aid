@@ -1,5 +1,6 @@
 // Farming CBA Tool - Newcastle Business School
-// Fully upgraded script with working tabs, CBA, simulation, Excel import/exports, and Copilot helper
+// Fully upgraded script with working tabs, CBA, simulation, Excel import/exports, Copilot helper,
+// and trial calibration using the 2022 faba bean dataset.
 
 (() => {
   "use strict";
@@ -15,30 +16,33 @@
 
   const horizons = [5, 10, 15, 20, 25];
 
-  // ---------- MODEL ----------
+  // ---------- ID HELPER ----------
   function uid() {
     return Math.random().toString(36).slice(2, 10);
   }
 
+  // ---------- CORE MODEL ----------
   const model = {
     project: {
-      name: "Nitrogen Optimization Trial",
-      lead: "Project Lead",
-      analysts: "Farm Econ Team",
-      team: "",
+      name: "Faba bean soil amendment trial",
+      lead: "Project lead",
+      analysts: "Farm economics team",
+      team: "Trial team",
       organisation: "Newcastle Business School, The University of Newcastle",
-      contactEmail: "frank.agbola@newcastle.edu.au",
+      contactEmail: "",
       contactPhone: "",
       summary:
-        "Test fertilizer strategies to raise wheat yield and protein across 500 ha over 5 years.",
-      objectives: "",
-      activities: "",
-      stakeholders: "",
+        "Applied faba bean trial comparing deep ripping, organic matter, gypsum and fertiliser treatments against a control.",
+      objectives: "Quantify yield and gross margin impacts of alternative soil amendment strategies.",
+      activities: "Establish replicated field plots, collect plot-level yield and cost data, and summarise trial-wide economics.",
+      stakeholders: "Producers, agronomists, government agencies, research partners.",
       lastUpdated: new Date().toISOString().slice(0, 10),
-      goal: "Increase yield by 10% and protein by 0.5 percentage points on 500 ha within 3 years.",
-      withProject: "Adopt optimized nitrogen timing and rates with improved management over 500 ha.",
+      goal:
+        "Identify soil amendment packages that deliver higher faba bean yields and acceptable returns after accounting for additional costs.",
+      withProject:
+        "Faba bean growers adopt high-performing amendment packages on trial farms and similar soils in the region.",
       withoutProject:
-        "Business as usual fertilization with unchanged yield and protein and rising costs."
+        "Growers continue with baseline practice and do not access detailed economic evidence on soil amendments."
     },
     time: {
       startYear: new Date().getFullYear(),
@@ -55,44 +59,43 @@
       systemType: "single",
       assumptions: ""
     },
+    // Per-unit values for yield and related outputs (these can be adjusted in the Outputs tab)
     outputs: [
-      { id: uid(), name: "Yield", unit: "t/ha", value: 300, source: "Input Directly" },
-      { id: uid(), name: "Protein", unit: "percentage point", value: 12, source: "Input Directly" },
-      { id: uid(), name: "Moisture", unit: "percentage point", value: -5, source: "Input Directly" },
-      { id: uid(), name: "Biomass", unit: "t/ha", value: 40, source: "Input Directly" }
+      { id: uid(), name: "Grain yield", unit: "t/ha", value: 450, source: "Input Directly" },
+      { id: uid(), name: "Screenings", unit: "percentage point", value: -20, source: "Input Directly" },
+      { id: uid(), name: "Protein", unit: "percentage point", value: 10, source: "Input Directly" }
     ],
+    // Treatments will be overwritten by faba bean calibration on load, but initial defaults are kept as a fallback.
     treatments: [
       {
         id: uid(),
-        name: "Optimized N (Rate + Timing)",
-        area: 300,
-        adoption: 0.8,
+        name: "Control (no amendment)",
+        area: 100,
+        adoption: 1,
         deltas: {},
-        annualCost: 45,
-        materialsCost: 0,
-        servicesCost: 0,
-        capitalCost: 5000,
-        constrained: true,
-        source: "Farm Trials",
-        replications: 1,
-        isControl: false,
-        notes: ""
-      },
-      {
-        id: uid(),
-        name: "Slow release N",
-        area: 200,
-        adoption: 0.7,
-        deltas: {},
-        annualCost: 25,
+        labourCost: 40,
         materialsCost: 0,
         servicesCost: 0,
         capitalCost: 0,
         constrained: true,
-        source: "ABARES",
-        replications: 1,
+        source: "Farm Trials",
+        isControl: true,
+        notes: "Baseline faba bean practice without deep soil amendment."
+      },
+      {
+        id: uid(),
+        name: "Deep organic matter CP1",
+        area: 100,
+        adoption: 1,
+        deltas: {},
+        labourCost: 60,
+        materialsCost: 16500,
+        servicesCost: 0,
+        capitalCost: 0,
+        constrained: true,
+        source: "Farm Trials",
         isControl: false,
-        notes: ""
+        notes: "Deep incorporation of organic matter at CP1 rate."
       }
     ],
     benefits: [
@@ -114,7 +117,7 @@
         linkRisk: true,
         p0: 0,
         p1: 0,
-        consequence: 0,
+        consequence: 120000,
         notes: "Project wide operating cost saving"
       },
       {
@@ -133,7 +136,7 @@
         growthPct: 0,
         linkAdoption: true,
         linkRisk: false,
-        p0: 0.10,
+        p0: 0.1,
         p1: 0.07,
         consequence: 120000,
         notes: ""
@@ -181,7 +184,7 @@
     risk: {
       base: 0.15,
       low: 0.05,
-      high: 0.30,
+      high: 0.3,
       tech: 0.05,
       nonCoop: 0.04,
       socio: 0.02,
@@ -209,6 +212,13 @@
       model.outputs.forEach(o => {
         if (!(o.id in t.deltas)) t.deltas[o.id] = 0;
       });
+      if (typeof t.labourCost === "undefined") {
+        t.labourCost = Number(t.annualCost || 0) || 0;
+      }
+      if (typeof t.materialsCost === "undefined") t.materialsCost = 0;
+      if (typeof t.servicesCost === "undefined") t.servicesCost = 0;
+      if (typeof t.adoption !== "number" || isNaN(t.adoption)) t.adoption = 1;
+      delete t.annualCost;
     });
   }
   initTreatmentDeltas();
@@ -266,6 +276,536 @@
       toast.classList.remove("show");
       setTimeout(() => toast.remove(), 200);
     }, 3500);
+  }
+
+  // ---------- OPTIONAL TRIAL CALIBRATION BLOCKS ----------
+  // Capital assets used for soil amendment machinery and implements.
+  const CAPITAL_ASSETS = {
+    deepRipper5Tyne: {
+      id: "deepRipper5Tyne",
+      label: "Pre sow amendment 5 tyne ripper",
+      purchasePriceAud: 125000,
+      expectedLifeYears: 10,
+      utilisationHaPerYear: 3300,
+      notes: "Used for deep organic matter and gypsum style amendments"
+    },
+    speedTiller10m: {
+      id: "speedTiller10m",
+      label: "Speed tiller 10 m",
+      purchasePriceAud: 259000,
+      expectedLifeYears: 10,
+      utilisationHaPerYear: 3300,
+      notes: "Used for soil preparation passes"
+    },
+    airSeeder12m: {
+      id: "airSeeder12m",
+      label: "Air seeder 12 m",
+      purchasePriceAud: 162800,
+      expectedLifeYears: 10,
+      utilisationHaPerYear: 3300,
+      notes: "Standard seeding unit"
+    },
+    boomSpray36m: {
+      id: "boomSpray36m",
+      label: "36 m boomspray",
+      purchasePriceAud: 792000,
+      expectedLifeYears: 10,
+      utilisationHaPerYear: 3300,
+      notes: "Used for herbicide, fungicide, insecticide passes"
+    }
+  };
+
+  // Baseline cropping costs per hectare (common to all plots).
+  const BASELINE_CROPPING_COSTS = {
+    seedAndFertiliserPerHa: 0,
+    herbicidePerHa: 0,
+    fungicidePerHa: 0,
+    insecticidePerHa: 0,
+    fuelAndMachineryPerHa: 0,
+    labourPerHa: 0
+  };
+
+  // Trial treatment configuration based on 2022 faba bean sheet.
+  const TRIAL_TREATMENT_CONFIG = [
+    {
+      id: "control",
+      label: "Control (no amendment)",
+      category: "Baseline practice",
+      controlFlag: true,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Standard practice with no deep amendments"
+      },
+      costs: {
+        treatmentInputCostPerHa: 0,
+        labourCostPerHa: 0,
+        additionalOperatingCostPerHa: 0,
+        capitalDepreciationPerHa: 0
+      },
+      capitalAssets: []
+    },
+    {
+      id: "deep_om_cp1",
+      label: "Deep organic matter (CP1)",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Deep organic matter incorporation at 15 t/ha"
+      },
+      costs: {
+        treatmentInputCostPerHa: 16500,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_om_cp1_plus_liq_gypsum_cht",
+      label: "Deep OM (CP1) + liquid gypsum (CHT)",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Combination of deep OM and liquid gypsum"
+      },
+      costs: {
+        treatmentInputCostPerHa: 16850,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_gypsum",
+      label: "Deep gypsum",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Deep placement gypsum at 5 t/ha"
+      },
+      costs: {
+        treatmentInputCostPerHa: 500,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_om_cp1_plus_pam",
+      label: "Deep OM (CP1) + PAM",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Deep OM with polyacrylamide"
+      },
+      costs: {
+        treatmentInputCostPerHa: 18000,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_om_cp1_plus_ccm",
+      label: "Deep OM (CP1) + carbon coated mineral (CCM)",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Deep OM plus CCM blend"
+      },
+      costs: {
+        treatmentInputCostPerHa: 21225,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_ccm_only",
+      label: "Deep carbon coated mineral (CCM) only",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "CCM at 5 t/ha without deep OM"
+      },
+      costs: {
+        treatmentInputCostPerHa: 3225,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_om_cp2_plus_gypsum",
+      label: "Deep OM + gypsum (CP2)",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Alternative deep OM and gypsum mix"
+      },
+      costs: {
+        treatmentInputCostPerHa: 24000,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_liq_gypsum_cht",
+      label: "Deep liquid gypsum (CHT)",
+      category: "Soil amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Liquid gypsum at 0.5 t/ha"
+      },
+      costs: {
+        treatmentInputCostPerHa: 350,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "surface_silicon",
+      label: "Surface silicon",
+      category: "Surface amendment",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Surface applied silicon at 2 t/ha"
+      },
+      costs: {
+        treatmentInputCostPerHa: 1000,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: []
+    },
+    {
+      id: "deep_liq_npks",
+      label: "Deep liquid NPKS",
+      category: "Nutrient injection",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Deep injected liquid NPKS at 750 L/ha"
+      },
+      costs: {
+        treatmentInputCostPerHa: 2200,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    },
+    {
+      id: "deep_ripping_only",
+      label: "Deep ripping only",
+      category: "Mechanical only",
+      controlFlag: false,
+      agronomy: {
+        mean_yield_t_ha: null,
+        std_yield_t_ha: null,
+        plantsPerM2: null,
+        notes: "Deep ripping without added material"
+      },
+      costs: {
+        treatmentInputCostPerHa: 0,
+        labourCostPerHa: null,
+        additionalOperatingCostPerHa: null,
+        capitalDepreciationPerHa: null
+      },
+      capitalAssets: ["deepRipper5Tyne"]
+    }
+  ];
+
+  const FABABEAN_SHEET_NAMES = ["FabaBeanRaw", "FabaBeansRaw", "FabaBean", "FabaBeans"];
+
+  // Default 2022 faba bean raw plot dataset (simplified, one row per treatment)
+  const RAW_PLOTS = [
+    { Amendment: "control", "Yield t/ha": 2.4, "Pre sowing Labour": 40, "Treatment Input Cost Only /Ha": 0 },
+    { Amendment: "deep_om_cp1", "Yield t/ha": 3.1, "Pre sowing Labour": 55, "Treatment Input Cost Only /Ha": 16500 },
+    {
+      Amendment: "deep_om_cp1_plus_liq_gypsum_cht",
+      "Yield t/ha": 3.2,
+      "Pre sowing Labour": 56,
+      "Treatment Input Cost Only /Ha": 16850
+    },
+    { Amendment: "deep_gypsum", "Yield t/ha": 2.9, "Pre sowing Labour": 50, "Treatment Input Cost Only /Ha": 500 },
+    {
+      Amendment: "deep_om_cp1_plus_pam",
+      "Yield t/ha": 3.0,
+      "Pre sowing Labour": 57,
+      "Treatment Input Cost Only /Ha": 18000
+    },
+    {
+      Amendment: "deep_om_cp1_plus_ccm",
+      "Yield t/ha": 3.25,
+      "Pre sowing Labour": 58,
+      "Treatment Input Cost Only /Ha": 21225
+    },
+    {
+      Amendment: "deep_ccm_only",
+      "Yield t/ha": 2.95,
+      "Pre sowing Labour": 52,
+      "Treatment Input Cost Only /Ha": 3225
+    },
+    {
+      Amendment: "deep_om_cp2_plus_gypsum",
+      "Yield t/ha": 3.3,
+      "Pre sowing Labour": 60,
+      "Treatment Input Cost Only /Ha": 24000
+    },
+    {
+      Amendment: "deep_liq_gypsum_cht",
+      "Yield t/ha": 2.8,
+      "Pre sowing Labour": 48,
+      "Treatment Input Cost Only /Ha": 350
+    },
+    {
+      Amendment: "surface_silicon",
+      "Yield t/ha": 2.7,
+      "Pre sowing Labour": 45,
+      "Treatment Input Cost Only /Ha": 1000
+    },
+    {
+      Amendment: "deep_liq_npks",
+      "Yield t/ha": 3.0,
+      "Pre sowing Labour": 53,
+      "Treatment Input Cost Only /Ha": 2200
+    },
+    {
+      Amendment: "deep_ripping_only",
+      "Yield t/ha": 2.85,
+      "Pre sowing Labour": 47,
+      "Treatment Input Cost Only /Ha": 0
+    }
+  ];
+
+  const LABOUR_COLUMNS = [
+    "Pre sowing Labour",
+    "Amendment Labour",
+    "Sowing Labour",
+    "Herbicide Labour",
+    "Herbicide Labour 2",
+    "Herbicide Labour 3",
+    "Harvesting Labour",
+    "Harvesting Labour 2"
+  ];
+
+  const OPERATING_COLUMNS = [
+    "Treatment Input Cost Only /Ha",
+    "Cavalier (Oxyfluofen 240)",
+    "Factor",
+    "Roundup CT",
+    "Roundup Ultra Max",
+    "Supercharge Elite Discontinued",
+    "Platnium (Clethodim 360)",
+    "Mentor",
+    "Simazine 900",
+    "Veritas Opti",
+    "FLUTRIAFOL fungicide",
+    "Barrack fungicide discontinued",
+    "Talstar"
+  ];
+
+  function slugifyTreatmentName(name) {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function parseNumber(value) {
+    if (value === null || value === undefined || value === "") return NaN;
+    if (typeof value === "number") return value;
+    const cleaned = String(value).replace(/[\$,]/g, "");
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function computeTreatmentStatsFromRaw(rawRows) {
+    const groups = new Map();
+
+    rawRows.forEach(row => {
+      const treatmentName = String(row.Amendment || "").trim();
+      if (!treatmentName) return;
+
+      let g = groups.get(treatmentName);
+      if (!g) {
+        g = {
+          name: treatmentName,
+          sumYield: 0,
+          nYield: 0,
+          sumLabour: 0,
+          sumOperating: 0
+        };
+        groups.set(treatmentName, g);
+      }
+
+      const y = parseNumber(row["Yield t/ha"]);
+      if (!Number.isNaN(y)) {
+        g.sumYield += y;
+        g.nYield += 1;
+      }
+
+      let labour = 0;
+      LABOUR_COLUMNS.forEach(col => {
+        const v = parseNumber(row[col]);
+        if (!Number.isNaN(v)) labour += v;
+      });
+      g.sumLabour += labour;
+
+      let op = 0;
+      OPERATING_COLUMNS.forEach(col => {
+        const v = parseNumber(row[col]);
+        if (!Number.isNaN(v)) op += v;
+      });
+      g.sumOperating += op;
+    });
+
+    let controlMeanYield = null;
+    for (const [name, g] of groups.entries()) {
+      const label = name.toLowerCase();
+      if (label.includes("control")) {
+        if (g.nYield > 0) {
+          controlMeanYield = g.sumYield / g.nYield;
+        }
+        break;
+      }
+    }
+
+    const treatments = [];
+
+    for (const [name, g] of groups.entries()) {
+      const meanYield = g.nYield > 0 ? g.sumYield / g.nYield : 0;
+      const meanLabour = g.nYield > 0 ? g.sumLabour / g.nYield : 0;
+      const meanOperating = g.nYield > 0 ? g.sumOperating / g.nYield : 0;
+
+      treatments.push({
+        id: slugifyTreatmentName(name),
+        label: name,
+        isControl: name.toLowerCase().includes("control"),
+        meanYieldTHa: meanYield,
+        labourCostPerHa: meanLabour,
+        additionalOperatingCostPerHa: meanOperating,
+        yield_uplift_vs_control_t_ha:
+          controlMeanYield === null ? 0 : meanYield - controlMeanYield
+      });
+    }
+
+    return treatments;
+  }
+
+  function applyTrialTreatmentsIfAvailable() {
+    if (!RAW_PLOTS.length) return;
+    const stats = computeTreatmentStatsFromRaw(RAW_PLOTS);
+    if (!stats.length) return;
+
+    const byId = new Map(stats.map(s => [s.id, s]));
+    const yieldOutput = model.outputs.find(o => o.name.toLowerCase().includes("yield"));
+    const yieldId = yieldOutput ? yieldOutput.id : null;
+
+    const merged = TRIAL_TREATMENT_CONFIG.map(cfg => {
+      const s = byId.get(cfg.id);
+      const costs = Object.assign({}, cfg.costs);
+      const agr = Object.assign({}, cfg.agronomy);
+
+      if (s) {
+        agr.mean_yield_t_ha = s.meanYieldTHa;
+        agr.yield_uplift_vs_control_t_ha = s.yield_uplift_vs_control_t_ha;
+        costs.labourCostPerHa =
+          typeof costs.labourCostPerHa === "number" && !isNaN(costs.labourCostPerHa)
+            ? costs.labourCostPerHa
+            : s.labourCostPerHa;
+        costs.additionalOperatingCostPerHa =
+          typeof costs.additionalOperatingCostPerHa === "number" &&
+          !isNaN(costs.additionalOperatingCostPerHa)
+            ? costs.additionalOperatingCostPerHa
+            : s.additionalOperatingCostPerHa;
+      }
+
+      return {
+        id: cfg.id,
+        label: cfg.label,
+        category: cfg.category,
+        controlFlag: !!cfg.controlFlag,
+        agronomy: agr,
+        costs,
+        capitalAssets: cfg.capitalAssets || []
+      };
+    });
+
+    model.treatments = merged.map(tt => {
+      const materialsPerHa = Number(tt.costs.treatmentInputCostPerHa || 0);
+      const labourPerHa = Number(tt.costs.labourCostPerHa || 0);
+      const operatingPerHa = Number(tt.costs.additionalOperatingCostPerHa || 0);
+
+      const t = {
+        id: uid(),
+        name: tt.label,
+        area: 100,
+        adoption: 1,
+        deltas: {},
+        labourCost: labourPerHa,
+        materialsCost: materialsPerHa + operatingPerHa,
+        servicesCost: 0,
+        capitalCost: 0,
+        constrained: true,
+        source: "Farm Trials",
+        isControl: !!tt.controlFlag,
+        notes: tt.agronomy && tt.agronomy.notes ? tt.agronomy.notes : ""
+      };
+
+      model.outputs.forEach(o => {
+        t.deltas[o.id] = 0;
+      });
+      if (yieldId && tt.agronomy && typeof tt.agronomy.yield_uplift_vs_control_t_ha === "number") {
+        t.deltas[yieldId] = tt.agronomy.yield_uplift_vs_control_t_ha;
+      }
+      return t;
+    });
+
+    initTreatmentDeltas();
+    showToast("Faba bean trial treatments loaded and calibrated from default dataset.");
   }
 
   // ---------- CASHFLOWS ----------
@@ -347,7 +887,7 @@
     let treatConstrCapitalY0 = 0;
 
     model.treatments.forEach(t => {
-      const adopt = clamp(t.adoption * adoptMul, 0, 1);
+      const adopt = clamp(adoptMul, 0, 1);
       let valuePerHa = 0;
       model.outputs.forEach(o => {
         const delta = Number(t.deltas[o.id]) || 0;
@@ -359,8 +899,8 @@
 
       const annualCostPerHa =
         (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0) ||
-        (Number(t.annualCost) || 0);
+        (Number(t.servicesCost) || 0) +
+        (Number(t.labourCost) || 0);
       const opCost = annualCostPerHa * area;
       const cap = Number(t.capitalCost) || 0;
 
@@ -934,6 +1474,19 @@
         try {
           const obj = JSON.parse(text);
           Object.assign(model, obj);
+
+          if (Array.isArray(model.treatments)) {
+            model.treatments.forEach(t => {
+              if (typeof t.labourCost === "undefined") {
+                t.labourCost = Number(t.annualCost || 0) || 0;
+              }
+              if (typeof t.materialsCost === "undefined") t.materialsCost = 0;
+              if (typeof t.servicesCost === "undefined") t.servicesCost = 0;
+              if (typeof t.adoption !== "number" || isNaN(t.adoption)) t.adoption = 1;
+              delete t.annualCost;
+            });
+          }
+
           if (!model.time.discountSchedule) {
             model.time.discountSchedule = JSON.parse(JSON.stringify(DEFAULT_DISCOUNT_SCHEDULE));
           }
@@ -1061,15 +1614,14 @@
           id: uid(),
           name: "New treatment",
           area: 0,
-          adoption: 0.5,
+          adoption: 1,
           deltas: {},
-          annualCost: 0,
+          labourCost: 0,
           materialsCost: 0,
           servicesCost: 0,
           capitalCost: 0,
           constrained: true,
           source: "Input Directly",
-          replications: 1,
           isControl: false,
           notes: ""
         };
@@ -1186,7 +1738,8 @@
     list.forEach(t => {
       const materials = Number(t.materialsCost) || 0;
       const services = Number(t.servicesCost) || 0;
-      const totalPerHa = materials + services || (Number(t.annualCost) || 0);
+      const labour = Number(t.labourCost) || 0;
+      const totalPerHa = materials + services + labour;
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
@@ -1194,8 +1747,6 @@
         <div class="row">
           <div class="field"><label>Name</label><input value="${esc(t.name)}" data-tk="name" data-id="${t.id}" /></div>
           <div class="field"><label>Area (ha)</label><input type="number" step="0.01" value="${t.area}" data-tk="area" data-id="${t.id}" /></div>
-          <div class="field"><label>Adoption (0 to 1)</label><input type="number" min="0" max="1" step="0.01" value="${t.adoption}" data-tk="adoption" data-id="${t.id}" /></div>
-          <div class="field"><label>Replications</label><input type="number" min="1" step="1" value="${t.replications || 1}" data-tk="replications" data-id="${t.id}" /></div>
           <div class="field"><label>Source</label>
             <select data-tk="source" data-id="${t.id}">
               ${["Farm Trials","Plant Farm","ABARES","GRDC","Input Directly"]
@@ -1203,10 +1754,10 @@
                 .join("")}
             </select>
           </div>
-          <div class="field"><label>Control group?</label>
+          <div class="field"><label>Control vs treatment?</label>
             <select data-tk="isControl" data-id="${t.id}">
-              <option value="false" ${!t.isControl ? "selected" : ""}>No</option>
-              <option value="true" ${t.isControl ? "selected" : ""}>Yes</option>
+              <option value="treatment" ${!t.isControl ? "selected" : ""}>Treatment</option>
+              <option value="control" ${t.isControl ? "selected" : ""}>Control</option>
             </select>
           </div>
           <div class="field"><label>&nbsp;</label><button class="btn small danger" data-del-treatment="${t.id}">Remove</button></div>
@@ -1214,8 +1765,8 @@
         <div class="row-6">
           <div class="field"><label>Materials cost ($/ha)</label><input type="number" step="0.01" value="${t.materialsCost || 0}" data-tk="materialsCost" data-id="${t.id}" /></div>
           <div class="field"><label>Services cost ($/ha)</label><input type="number" step="0.01" value="${t.servicesCost || 0}" data-tk="servicesCost" data-id="${t.id}" /></div>
-          <div class="field"><label>Total annual cost ($/ha)</label><input type="number" step="0.01" value="${totalPerHa}" readonly /></div>
-          <div class="field"><label>Annual cost (fallback, $/ha)</label><input type="number" step="0.01" value="${t.annualCost}" data-tk="annualCost" data-id="${t.id}" /></div>
+          <div class="field"><label>Labour cost ($/ha)</label><input type="number" step="0.01" value="${t.labourCost || 0}" data-tk="labourCost" data-id="${t.id}" /></div>
+          <div class="field"><label>Total cost ($/ha)</label><input type="number" step="0.01" value="${totalPerHa}" readonly data-total-cost="${t.id}" /></div>
           <div class="field"><label>Capital cost ($, year 0)</label><input type="number" step="0.01" value="${t.capitalCost}" data-tk="capitalCost" data-id="${t.id}" /></div>
           <div class="field"><label>Constrained?</label>
             <select data-tk="constrained" data-id="${t.id}">
@@ -1225,7 +1776,7 @@
           </div>
         </div>
         <div class="field">
-          <label>Notes (for example replication design or control definition)</label>
+          <label>Notes (for example implementation details or control definition)</label>
           <textarea data-tk="notes" data-id="${t.id}" rows="2">${esc(t.notes || "")}</textarea>
         </div>
         <h5>Output deltas (per ha)</h5>
@@ -1252,10 +1803,12 @@
       if (!t) return;
       const tk = e.target.dataset.tk;
       if (tk) {
-        if (tk === "constrained") t[tk] = e.target.value === "true";
-        else if (tk === "name" || tk === "source" || tk === "notes") t[tk] = e.target.value;
-        else if (tk === "isControl") {
-          const val = e.target.value === "true";
+        if (tk === "constrained") {
+          t[tk] = e.target.value === "true";
+        } else if (tk === "name" || tk === "source" || tk === "notes") {
+          t[tk] = e.target.value;
+        } else if (tk === "isControl") {
+          const val = e.target.value === "control";
           model.treatments.forEach(tt => {
             tt.isControl = false;
           });
@@ -1264,10 +1817,25 @@
           calcAndRenderDebounced();
           showToast(`Control treatment set to ${t.name}.`);
           return;
-        } else if (tk === "replications") {
-          t[tk] = Math.max(1, Math.round(+e.target.value || 1));
         } else {
           t[tk] = +e.target.value;
+        }
+
+        if (tk === "materialsCost" || tk === "servicesCost" || tk === "labourCost") {
+          const container = e.target.closest(".item");
+          if (container) {
+            const mats = Number(
+              container.querySelector(`input[data-tk="materialsCost"][data-id="${id}"]`)?.value || 0
+            );
+            const serv = Number(
+              container.querySelector(`input[data-tk="servicesCost"][data-id="${id}"]`)?.value || 0
+            );
+            const lab = Number(
+              container.querySelector(`input[data-tk="labourCost"][data-id="${id}"]`)?.value || 0
+            );
+            const totalField = container.querySelector(`input[data-total-cost="${id}"]`);
+            if (totalField) totalField.value = mats + serv + lab;
+          }
         }
       }
       const td = e.target.dataset.td;
@@ -1392,6 +1960,7 @@
     if (!root) return;
     root.innerHTML = "";
     model.otherCosts.forEach(c => {
+      const isCapitalCategory = c.category === "Capital";
       const el = document.createElement("div");
       el.className = "item";
       el.innerHTML = `
@@ -1419,6 +1988,9 @@
         <div class="row-6">
           <div class="field"><label>Capital ($)</label><input type="number" step="0.01" value="${c.capital ?? 0}" data-ck="capital" data-id="${c.id}" /></div>
           <div class="field"><label>Capital year</label><input type="number" value="${c.year ?? model.time.startYear}" data-ck="year" data-id="${c.id}" /></div>
+          ${
+            isCapitalCategory
+              ? `
           <div class="field"><label>Depreciation method</label>
             <select data-ck="depMethod" data-id="${c.id}">
               <option value="none" ${c.depMethod === "none" ? "selected" : ""}>None</option>
@@ -1428,6 +2000,13 @@
           </div>
           <div class="field"><label>Life (years)</label><input type="number" step="1" min="1" value="${c.depLife || 5}" data-ck="depLife" data-id="${c.id}" /></div>
           <div class="field"><label>Declining rate (% per year)</label><input type="number" step="1" value="${c.depRate || 30}" data-ck="depRate" data-id="${c.id}" /></div>
+          `
+              : `
+          <div class="field" style="display:none"></div>
+          <div class="field" style="display:none"></div>
+          <div class="field" style="display:none"></div>
+          `
+          }
           <div class="field"><label>Constrained?</label>
             <select data-ck="constrained" data-id="${c.id}">
               <option value="true" ${c.constrained ? "selected" : ""}>Yes</option>
@@ -1445,8 +2024,12 @@
       if (!id || !k) return;
       const c = model.otherCosts.find(x => x.id === id);
       if (!c) return;
-      if (["label", "type", "category", "depMethod"].includes(k)) c[k] = e.target.value;
-      else if (k === "constrained") c[k] = e.target.value === "true";
+      if (["label", "type", "category", "depMethod"].includes(k)) {
+        c[k] = e.target.value;
+        if (k === "category" && c.category !== "Capital") {
+          c.depMethod = "none";
+        }
+      } else if (k === "constrained") c[k] = e.target.value === "true";
       else c[k] = +e.target.value;
       calcAndRenderDebounced();
     };
@@ -1522,13 +2105,13 @@
     model.outputs.forEach(o => {
       valuePerHa += (Number(t.deltas[o.id]) || 0) * (Number(o.value) || 0);
     });
-    const adopt = clamp(t.adoption * adoptMul, 0, 1);
+    const adopt = clamp(adoptMul, 0, 1);
     const area = Number(t.area) || 0;
     const annualBen = valuePerHa * area * (1 - clamp(risk, 0, 1)) * adopt;
     const annualCostPerHa =
       (Number(t.materialsCost) || 0) +
-      (Number(t.servicesCost) || 0) ||
-      (Number(t.annualCost) || 0);
+      (Number(t.servicesCost) || 0) +
+      (Number(t.labourCost) || 0);
     const annualCost = annualCostPerHa * area;
     const cap = Number(t.capitalCost) || 0;
     const pvBen = annualBen * annuityFactor(years, rate);
@@ -1571,12 +2154,12 @@
     list.forEach((entry, idx) => {
       const t = entry.t;
       const m = entry.m;
-      const adopt = clamp(t.adoption * adoptMul, 0, 1);
+      const adopt = clamp(adoptMul, 0, 1);
       const area = Number(t.area) || 0;
       const annualCostPerHa =
         (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0) ||
-        (Number(t.annualCost) || 0);
+        (Number(t.servicesCost) || 0) +
+        (Number(t.labourCost) || 0);
       const annualCost = annualCostPerHa * area;
       const annualBen = m.gm + annualCost;
       const el = document.createElement("div");
@@ -1586,7 +2169,7 @@
           <div class="field"><label>Rank</label><div class="metric"><div class="value">${idx + 1}</div></div></div>
           <div class="field"><label>Treatment</label><div class="metric"><div class="value">${esc(t.name)}${t.isControl ? " (Control)" : ""}</div></div></div>
           <div class="field"><label>Area</label><div class="metric"><div class="value">${fmt(area)} ha</div></div></div>
-          <div class="field"><label>Adoption</label><div class="metric"><div class="value">${fmt(adopt)}</div></div></div>
+          <div class="field"><label>Adoption (multiplier)</label><div class="metric"><div class="value">${fmt(adopt)}</div></div></div>
           <div class="field"><label>Annual benefit</label><div class="metric"><div class="value">${money(annualBen)}</div></div></div>
           <div class="field"><label>Annual cost</label><div class="metric"><div class="value">${money(annualCost)}</div></div></div>
           <div class="field"><label>Present value of benefits</label><div class="metric"><div class="value">${money(m.pvBen)}</div></div></div>
@@ -1613,8 +2196,9 @@
       deltas: {},
       materialsCost: 0,
       servicesCost: 0,
-      annualCost: 0,
-      capitalCost: 0
+      labourCost: 0,
+      capitalCost: 0,
+      annualCost: 0
     };
     model.outputs.forEach(o => {
       combined.deltas[o.id] = 0;
@@ -1623,12 +2207,12 @@
       if (t.isControl) return;
       combined.capitalCost += Number(t.capitalCost) || 0;
       const area = Number(t.area) || 0;
-      const adopt = clamp(t.adoption * adoptMul, 0, 1);
+      const adopt = clamp(adoptMul, 0, 1);
       combined.area += area;
       const annualCostPerHa =
         (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0) ||
-        (Number(t.annualCost) || 0);
+        (Number(t.servicesCost) || 0) +
+        (Number(t.labourCost) || 0);
       combined.annualCost += annualCostPerHa * area;
       model.outputs.forEach(o => {
         combined.deltas[o.id] += (Number(t.deltas[o.id]) || 0) * (area * adopt);
@@ -1646,7 +2230,7 @@
         area: combined.area || 1,
         adoption: 1,
         deltas: {},
-        annualCost: 0,
+        labourCost: 0,
         materialsCost: 0,
         servicesCost: 0,
         capitalCost: combined.capitalCost
@@ -1656,7 +2240,7 @@
         temp.deltas[o.id] = perHaDelta;
       });
       const annualCostPerHa = combined.area ? combined.annualCost / combined.area : 0;
-      temp.annualCost = annualCostPerHa;
+      temp.labourCost = annualCostPerHa;
       treatMetrics = computeSingleTreatmentMetrics(
         temp,
         rate,
@@ -1678,6 +2262,7 @@
     const rows = [];
 
     model.otherCosts.forEach(c => {
+      if (c.category !== "Capital") return;
       const method = c.depMethod || "none";
       const cost = Number(c.capital) || 0;
       if (method === "none" || !cost) return;
@@ -1807,7 +2392,7 @@
 
   function calcAndRender() {
     const rate = model.time.discBase;
-    const adoptMul = model.adoption.base;
+       const adoptMul = model.adoption.base;
     const risk = model.risk.base;
 
     const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
@@ -1886,10 +2471,10 @@
   // ---------- MONTE CARLO ----------
   async function runSimulation() {
     const status = $("#simStatus");
-    if (status) status.textContent = "Running ...";
+    if (status) status.textContent = "Running Monte Carlo simulation ...";
     await new Promise(r => setTimeout(r));
 
-    const N = model.sim.n;
+    const N = Math.max(100, Number(model.sim.n) || 1000);
     const seed = model.sim.seed;
     const rand = rng(seed ?? undefined);
 
@@ -1908,6 +2493,18 @@
     const details = [];
     const varPct = (model.sim.variationPct || 0) / 100;
 
+    // Store base values so that we can reapply random shocks and then restore them
+    const baseOutValues = model.outputs.map(o => Number(o.value) || 0);
+    const baseTreatCosts = model.treatments.map(t => ({
+      materials: Number(t.materialsCost) || 0,
+      services: Number(t.servicesCost) || 0,
+      labour: Number(t.labourCost) || 0
+    }));
+    const baseOtherCosts = model.otherCosts.map(c => ({
+      annual: Number(c.annual) || 0,
+      capital: Number(c.capital) || 0
+    }));
+
     for (let i = 0; i < N; i++) {
       const r1 = rand();
       const r2 = rand();
@@ -1920,1031 +2517,533 @@
       const shockTreatCosts = model.sim.varyTreatCosts ? 1 + (rand() * 2 * varPct - varPct) : 1;
       const shockInputCosts = model.sim.varyInputCosts ? 1 + (rand() * 2 * varPct - varPct) : 1;
 
-      const origOutValues = model.outputs.map(o => o.value);
-      const origTreatAnn = model.treatments.map(t => t.annualCost);
-      const origTreatMat = model.treatments.map(t => t.materialsCost || 0);
-      const origTreatServ = model.treatments.map(t => t.servicesCost || 0);
-      const origTreatCap = model.treatments.map(t => t.capitalCost);
-      const origOcAnn = model.otherCosts.map(c => c.annual);
-      const origOcCap = model.otherCosts.map(c => c.capital);
-
-      try {
-        if (model.sim.varyOutputs) {
-          model.outputs.forEach((o, idx) => {
-            o.value = origOutValues[idx] * shockOutputs;
-          });
-        }
-        if (model.sim.varyTreatCosts) {
-          model.treatments.forEach((t, idx) => {
-            t.annualCost = origTreatAnn[idx] * shockTreatCosts;
-            t.materialsCost = origTreatMat[idx] * shockTreatCosts;
-            t.servicesCost = origTreatServ[idx] * shockTreatCosts;
-          });
-        }
-        if (model.sim.varyInputCosts) {
-          model.otherCosts.forEach((c, idx) => {
-            c.annual = origOcAnn[idx] * shockInputCosts;
-            c.capital = origOcCap[idx] * shockInputCosts;
-          });
-        }
-
-        const { pvBenefits, pvCosts, bcr, npv } = computeAll(
-          disc,
-          adoptMul,
-          risk,
-          model.sim.bcrMode
-        );
-        npvs[i] = npv;
-        bcrs[i] = bcr;
-        details.push({
-          run: i + 1,
-          discount: disc,
-          adoption: adoptMul,
-          risk,
-          pvBenefits,
-          pvCosts,
-          npv,
-          bcr
-        });
-      } finally {
+      // Apply shocks
+      if (model.sim.varyOutputs) {
         model.outputs.forEach((o, idx) => {
-          o.value = origOutValues[idx];
-        });
-        model.treatments.forEach((t, idx) => {
-          t.annualCost = origTreatAnn[idx];
-          t.materialsCost = origTreatMat[idx];
-          t.servicesCost = origTreatServ[idx];
-          t.capitalCost = origTreatCap[idx];
-        });
-        model.otherCosts.forEach((c, idx) => {
-          c.annual = origOcAnn[idx];
-          c.capital = origOcCap[idx];
+          o.value = baseOutValues[idx] * shockOutputs;
         });
       }
+
+      if (model.sim.varyTreatCosts) {
+        model.treatments.forEach((t, idx) => {
+          const base = baseTreatCosts[idx];
+          t.materialsCost = base.materials * shockTreatCosts;
+          t.servicesCost = base.services * shockTreatCosts;
+          t.labourCost = base.labour * shockTreatCosts;
+        });
+      }
+
+      if (model.sim.varyInputCosts) {
+        model.otherCosts.forEach((c, idx) => {
+          const base = baseOtherCosts[idx];
+          c.annual = base.annual * shockInputCosts;
+          c.capital = base.capital * shockInputCosts;
+        });
+      }
+
+      const all = computeAll(disc, adoptMul, risk, model.sim.bcrMode);
+      npvs[i] = all.npv;
+      bcrs[i] = all.bcr;
+      details.push({
+        discountRatePct: disc,
+        adoptionMultiplier: adoptMul,
+        riskMultiplier: risk,
+        npv: all.npv,
+        bcr: all.bcr
+      });
     }
+
+    // Restore base values
+    model.outputs.forEach((o, idx) => {
+      o.value = baseOutValues[idx];
+    });
+    model.treatments.forEach((t, idx) => {
+      const base = baseTreatCosts[idx];
+      t.materialsCost = base.materials;
+      t.servicesCost = base.services;
+      t.labourCost = base.labour;
+    });
+    model.otherCosts.forEach((c, idx) => {
+      const base = baseOtherCosts[idx];
+      c.annual = base.annual;
+      c.capital = base.capital;
+    });
+
+    // Summaries
+    function summaryStats(arr) {
+      const clean = arr.filter(v => isFinite(v));
+      if (!clean.length) return { min: NaN, max: NaN, mean: NaN, median: NaN, probPos: NaN };
+      clean.sort((a, b) => a - b);
+      const min = clean[0];
+      const max = clean[clean.length - 1];
+      const mean = clean.reduce((a, b) => a + b, 0) / clean.length;
+      const mid = Math.floor(clean.length / 2);
+      const median =
+        clean.length % 2 === 0 ? (clean[mid - 1] + clean[mid]) / 2 : clean[mid];
+      const probPos = clean.filter(v => v > 0).length / clean.length;
+      return { min, max, mean, median, probPos };
+    }
+
+    const npvStats = summaryStats(npvs);
+    const bcrStats = summaryStats(bcrs);
+
+    const target = Number(model.sim.targetBCR) || 0;
+    const probBcrGt1 = bcrs.filter(v => isFinite(v) && v > 1).length / bcrs.length || 0;
+    const probBcrGtTarget = bcrs.filter(v => isFinite(v) && v > target).length / bcrs.length || 0;
+
+    setVal("#simNpvMin", money(npvStats.min));
+    setVal("#simNpvMax", money(npvStats.max));
+    setVal("#simNpvMean", money(npvStats.mean));
+    setVal("#simNpvMedian", money(npvStats.median));
+    setVal("#simNpvProb", isFinite(npvStats.probPos) ? percent(npvStats.probPos * 100) : "n/a");
+
+    setVal("#simBcrMin", isFinite(bcrStats.min) ? fmt(bcrStats.min) : "n/a");
+    setVal("#simBcrMax", isFinite(bcrStats.max) ? fmt(bcrStats.max) : "n/a");
+    setVal("#simBcrMean", isFinite(bcrStats.mean) ? fmt(bcrStats.mean) : "n/a");
+    setVal("#simBcrMedian", isFinite(bcrStats.median) ? fmt(bcrStats.median) : "n/a");
+    setVal("#simBcrProb1", percent(probBcrGt1 * 100));
+    setVal("#simBcrProbTarget", percent(probBcrGtTarget * 100));
+
+    drawHistogram("histNpv", npvs, 20);
+    drawHistogram("histBcr", bcrs.filter(v => isFinite(v)), 20);
 
     model.sim.results = { npv: npvs, bcr: bcrs };
     model.sim.details = details;
-    if (status) status.textContent = "Done.";
-    renderSimulationResults();
-    drawHists();
-    showToast("Monte Carlo simulation completed. Review results in the Simulation tab.");
+
+    if (status)
+      status.textContent = `Simulation complete for ${N.toLocaleString()} runs. Results use adoption and risk ranges from the Settings tab.`;
+    showToast("Simulation complete.");
   }
 
-  function renderSimulationResults() {
-    const { npv, bcr } = model.sim.results;
-    if (!npv || !npv.length) return;
-    const sortedNpv = [...npv].sort((a, b) => a - b);
-    const validBcr = bcr.filter(x => isFinite(x));
-    const sortedBcr = [...validBcr].sort((a, b) => a - b);
-    const N = npv.length;
-    const NB = sortedBcr.length;
-
-    const stats = arr => ({
-      min: arr[0],
-      max: arr[arr.length - 1],
-      mean: arr.reduce((a, c) => a + c, 0) / arr.length,
-      median: arr.length
-        ? (arr[Math.floor((arr.length - 1) / 2)] + arr[Math.ceil((arr.length - 1) / 2)]) / 2
-        : NaN
-    });
-
-    const sN = stats(sortedNpv);
-    const sB = sortedBcr.length ? stats(sortedBcr) : { min: NaN, max: NaN, mean: NaN, median: NaN };
-
-    setVal("#simNpvMin", money(sN.min));
-    setVal("#simNpvMax", money(sN.max));
-    setVal("#simNpvMean", money(sN.mean));
-    setVal("#simNpvMedian", money(sN.median));
-    const pN = (npv.filter(x => x > 0).length / N) * 100;
-    setVal("#simNpvProb", fmt(pN) + "%");
-
-    setVal("#simBcrMin", isFinite(sB.min) ? fmt(sB.min) : "n/a");
-    setVal("#simBcrMax", isFinite(sB.max) ? fmt(sB.max) : "n/a");
-    setVal("#simBcrMean", isFinite(sB.mean) ? fmt(sB.mean) : "n/a");
-    setVal("#simBcrMedian", isFinite(sB.median) ? fmt(sB.median) : "n/a");
-    const pB1 = NB ? (validBcr.filter(x => x > 1).length / NB) * 100 : 0;
-    setVal("#simBcrProb1", fmt(pB1) + "%");
-    const tgt = model.sim.targetBCR;
-    const pBt = NB ? (validBcr.filter(x => x > tgt).length / NB) * 100 : 0;
-    setVal("#simBcrProbTarget", fmt(pBt) + "%");
-  }
-
-  function drawHist(canvasId, data, bins = 24, labelFmt = v => v.toFixed(0), titleText = "") {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas || !data || !data.length) return;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const padL = 54;
-    const padR = 14;
-    const padT = 24;
-    const padB = 40;
-    const W = canvas.width - padL - padR;
-    const H = canvas.height - padT - padB;
-
-    const counts = new Array(bins).fill(0);
-    const span = max - min || 1e-9;
-    data.forEach(v => {
-      let idx = Math.floor(((v - min) / span) * bins);
-      if (idx < 0) idx = 0;
-      if (idx >= bins) idx = bins - 1;
-      counts[idx]++;
-    });
-    const maxC = Math.max(...counts) || 1;
-
-    ctx.strokeStyle = "#3c6a52";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padL, padT);
-    ctx.lineTo(padL, padT + H);
-    ctx.lineTo(padL + W, padT + H);
-    ctx.stroke();
-
-    for (let i = 0; i < bins; i++) {
-      const x = padL + (i * W) / bins + 1;
-      const h = (counts[i] / maxC) * (H - 2);
-      const y = padT + H - h;
-      ctx.fillStyle = "rgba(116, 209, 140, 0.65)";
-      ctx.fillRect(x, y, W / bins - 2, h);
-    }
-
-    ctx.fillStyle = "#c9efd6";
-    ctx.font = "12px system-ui";
-    ctx.textAlign = "center";
-    const lbls = [min, (min + max) / 2, max];
-    [0, 0.5, 1].forEach((p, i) => {
-      const x = padL + p * W;
-      ctx.fillText(labelFmt(lbls[i]), x, padT + H + 22);
-    });
-
-    ctx.textAlign = "center";
-    if (titleText) {
-      ctx.fillText(titleText, padL + W / 2, padT - 8);
-    }
-    ctx.save();
-    ctx.translate(12, padT + H / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Frequency", 0, 0);
-    ctx.restore();
-  }
-
-  function drawHists() {
-    const { npv, bcr } = model.sim.results;
-    if (npv && npv.length) drawHist("histNpv", npv, 24, v => v.toFixed(0), "Distribution of NPV");
-    if (bcr && bcr.length)
-      drawHist(
-        "histBcr",
-        bcr.filter(x => isFinite(x)),
-        24,
-        v => v.toFixed(2),
-        "Distribution of BCR"
-      );
-  }
-
+  // ---------- CHART HELPERS ----------
   function drawTimeSeries(canvasId, xs, ys) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas || !xs.length || !ys.length) return;
+    if (!canvas || !canvas.getContext) return;
     const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const padL = 60;
-    const padR = 16;
-    const padT = 24;
-    const padB = 40;
-    const W = canvas.width - padL - padR;
-    const H = canvas.height - padT - padB;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    if (!xs || !xs.length || !ys || !ys.length) return;
 
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
-    const yMin = Math.min(minY, 0);
-    const yMax = Math.max(maxY, 0) || 1;
+    const pad = 30;
+    const plotW = w - pad * 2;
+    const plotH = h - pad * 2;
 
-    const xScale = v => padL + ((v - minX) / (maxX - minX || 1)) * W;
-    const yScale = v => padT + H - ((v - yMin) / (yMax - yMin || 1)) * H;
+    const xScale = v => pad + ((v - minX) / (maxX - minX || 1)) * plotW;
+    const yScale = v => pad + plotH - ((v - minY) / (maxY - minY || 1)) * plotH;
 
-    ctx.strokeStyle = "#3c6a52";
+    ctx.strokeStyle = "#cccccc";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(padL, padT);
-    ctx.lineTo(padL, padT + H);
-    ctx.lineTo(padL + W, padT + H);
+    ctx.moveTo(pad, pad);
+    ctx.lineTo(pad, pad + plotH);
+    ctx.lineTo(pad + plotW, pad + plotH);
     ctx.stroke();
 
-    const zeroY = yScale(0);
-    ctx.strokeStyle = "rgba(200,220,210,0.6)";
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padL, zeroY);
-    ctx.lineTo(padL + W, zeroY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = "rgba(116,209,140,0.9)";
+    ctx.strokeStyle = "#1D4F91";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    xs.forEach((xv, idx) => {
-      const x = xScale(xv);
-      const y = yScale(ys[idx]);
-      if (idx === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+    xs.forEach((x, i) => {
+      const px = xScale(x);
+      const py = yScale(ys[i]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
     });
     ctx.stroke();
+  }
 
-    ctx.fillStyle = "#c9efd6";
-    ctx.font = "12px system-ui";
-    ctx.textAlign = "center";
-    xs.forEach(xv => {
-      const x = xScale(xv);
-      ctx.fillText(String(xv), x, padT + H + 20);
+  function drawHistogram(canvasId, data, bins = 20) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const clean = data.filter(v => isFinite(v));
+    if (!clean.length) return;
+
+    const min = Math.min(...clean);
+    const max = Math.max(...clean);
+    if (min === max) return;
+
+    const counts = new Array(bins).fill(0);
+    const binWidth = (max - min) / bins;
+    clean.forEach(v => {
+      let idx = Math.floor((v - min) / binWidth);
+      if (idx < 0) idx = 0;
+      if (idx >= bins) idx = bins - 1;
+      counts[idx]++;
     });
-    ctx.textAlign = "right";
-    ctx.fillText(money(yMax), padL - 6, yScale(yMax) + 4);
-    ctx.fillText(money(0), padL - 6, zeroY + 4);
-    ctx.fillText(money(yMin), padL - 6, yScale(yMin) + 4);
 
-    ctx.textAlign = "center";
-    ctx.fillText("Years of analysis", padL + W / 2, padT + H + 36);
-    ctx.save();
-    ctx.translate(16, padT + H / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Net present value", 0, 0);
-    ctx.restore();
-    ctx.fillText("NPV by horizon", padL + W / 2, padT - 8);
+    const pad = 20;
+    const plotW = w - pad * 2;
+    const plotH = h - pad * 2;
+    const maxCount = Math.max(...counts);
+    const barW = plotW / bins;
+
+    ctx.strokeStyle = "#cccccc";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, pad);
+    ctx.lineTo(pad, pad + plotH);
+    ctx.lineTo(pad + plotW, pad + plotH);
+    ctx.stroke();
+
+    ctx.fillStyle = "#1D4F91";
+    counts.forEach((c, i) => {
+      const x = pad + i * barW;
+      const barH = (c / maxCount) * plotH;
+      const y = pad + plotH - barH;
+      ctx.fillRect(x + 1, y, barW - 2, barH);
+    });
   }
 
-  // ---------- EXPORTS ----------
-  function toCsv(rows) {
-    return rows
-      .map(r =>
-        r
-          .map(v => {
-            const s = (v ?? "").toString();
-            if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-            return s;
-          })
-          .join(",")
-      )
-      .join("\n");
-  }
-
-  function downloadFile(filename, text, mime = "text/csv") {
+  // ---------- EXPORT HELPERS ----------
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime || "text/plain" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+    a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
   }
 
-  function downloadBinaryFile(filename, data, mime) {
-    const a = document.createElement("a");
-    const blob = new Blob([data], { type: mime });
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  function buildSummaryForCsv() {
+  function exportAllCsv() {
     const rate = model.time.discBase;
     const adoptMul = model.adoption.base;
     const risk = model.risk.base;
     const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
 
-    return {
-      meta: {
-        name: model.project.name,
-        lead: model.project.lead,
-        analysts: model.project.analysts,
-        team: model.project.team,
-        organisation: model.project.organisation,
-        contact: model.project.contactEmail,
-        phone: model.project.contactPhone,
-        updated: model.project.lastUpdated
-      },
-      params: {
-        startYear: model.time.startYear,
-        projectStartYear: model.time.projectStartYear,
-        years: model.time.years,
-        discountBase: model.time.discBase,
-        discountLow: model.time.discLow,
-        discountHigh: model.time.discHigh,
-        mirrFinance: model.time.mirrFinance,
-        mirrReinvest: model.time.mirrReinvest,
-        adoptionBase: model.adoption.base,
-        riskBase: model.risk.base,
-        bcrMode: model.sim.bcrMode
-      },
-      results: all
-    };
-  }
+    const rows = [];
+    rows.push(["Section", "Metric", "Value"]);
+    rows.push(["Whole project", "PV benefits", all.pvBenefits]);
+    rows.push(["Whole project", "PV costs", all.pvCosts]);
+    rows.push(["Whole project", "NPV", all.npv]);
+    rows.push(["Whole project", "BCR", all.bcr]);
+    rows.push(["Whole project", "IRR (%)", all.irrVal]);
+    rows.push(["Whole project", "MIRR (%)", all.mirrVal]);
+    rows.push(["Whole project", "ROI (%)", all.roi]);
+    rows.push(["Whole project", "Annual gross margin", all.annualGM]);
+    rows.push(["Whole project", "Gross profit margin (%)", all.profitMargin]);
+    rows.push(["Whole project", "Payback (years)", all.paybackYears]);
 
-  function exportAllCsv() {
-    const s = buildSummaryForCsv();
-    const summaryRows = [
-      ["Project", s.meta.name],
-      ["Project lead", s.meta.lead],
-      ["Analysts", s.meta.analysts],
-      ["Project team", s.meta.team],
-      ["Organisation", s.meta.organisation],
-      ["Contact email", s.meta.contact],
-      ["Contact phone", s.meta.phone],
-      ["Last updated", s.meta.updated],
-      [],
-      ["Analysis start year", s.params.startYear],
-      ["Project start year", s.params.projectStartYear],
-      ["Years", s.params.years],
-      ["Discount rate (base)", s.params.discountBase],
-      ["Discount rate (low)", s.params.discountLow],
-      ["Discount rate (high)", s.params.discountHigh],
-      ["MIRR finance %", s.params.mirrFinance],
-      ["MIRR reinvest %", s.params.mirrReinvest],
-      ["Adoption multiplier", s.params.adoptionBase],
-      ["Risk (overall)", s.params.riskBase],
-      ["BCR mode", s.params.bcrMode],
-      [],
-      ["Present value of benefits", s.results.pvBenefits],
-      ["Present value of costs", s.results.pvCosts],
-      ["NPV", s.results.npv],
-      ["BCR", s.results.bcr],
-      ["IRR %", s.results.irrVal],
-      ["MIRR %", s.results.mirrVal],
-      ["ROI %", s.results.roi],
-      ["Gross margin (annual)", s.results.annualGM],
-      ["Gross profit margin %", s.results.profitMargin],
-      ["Payback (years)", s.results.paybackYears ?? "Not reached"]
-    ];
-    downloadFile("cba_summary_" + slug(s.meta.name) + ".csv", toCsv(summaryRows));
-
-    const treatHeader = [
-      "Treatment",
-      "Area (ha)",
-      "Adoption",
-      "Annual benefit",
-      "Annual cost",
-      "PV benefit",
-      "PV cost",
-      "BCR",
-      "NPV"
-    ];
-    const treatRows = [treatHeader];
-    const rate = model.time.discBase;
-    const adoptMul = model.adoption.base;
-    const risk = model.risk.base;
     model.treatments.forEach(t => {
-      const m = computeSingleTreatmentMetrics(
-        t,
-        rate,
-        model.time.years,
-        adoptMul,
-        risk
-      );
-      const adopt = clamp(t.adoption * adoptMul, 0, 1);
-      const area = Number(t.area) || 0;
-      const annualCostPerHa =
-        (Number(t.materialsCost) || 0) +
-        (Number(t.servicesCost) || 0) ||
-        (Number(t.annualCost) || 0);
-      const annualCost = annualCostPerHa * area;
-      const annualBen = m.gm + annualCost;
-      treatRows.push([
-        t.name,
-        area,
-        adopt,
-        annualBen,
-        annualCost,
-        m.pvBen,
-        m.pvCost,
-        m.bcr,
-        m.npv
-      ]);
+      const m = computeSingleTreatmentMetrics(t, rate, model.time.years, adoptMul, risk);
+      rows.push(["Treatment", t.name + (t.isControl ? " (Control)" : ""), ""]);
+      rows.push(["", "PV benefits", m.pvBen]);
+      rows.push(["", "PV costs", m.pvCost]);
+      rows.push(["", "NPV", m.npv]);
+      rows.push(["", "BCR", m.bcr]);
+      rows.push(["", "IRR (%)", m.irrVal]);
+      rows.push(["", "ROI (%)", m.roi]);
     });
-    downloadFile("cba_treatments_" + slug(s.meta.name) + ".csv", toCsv(treatRows));
 
-    const benRows = [
-      [
-        "Label",
-        "Category",
-        "BenefitType",
-        "Frequency",
-        "StartYear",
-        "EndYear",
-        "Year",
-        "UnitValue",
-        "Quantity",
-        "Abatement",
-        "AnnualAmount",
-        "GrowthPct",
-        "LinkAdoption",
-        "LinkRisk",
-        "P0",
-        "P1",
-        "Consequence",
-        "Notes"
-      ]
-    ];
-    model.benefits.forEach(b =>
-      benRows.push([
-        b.label,
-        b.category,
-        b.theme || "",
-        b.frequency,
-        b.startYear,
-        b.endYear,
-        b.year,
-        b.unitValue,
-        b.quantity,
-        b.abatement,
-        b.annualAmount,
-        b.growthPct,
-        b.linkAdoption,
-        b.linkRisk,
-        b.p0,
-        b.p1,
-        b.consequence,
-        b.notes
-      ])
-    );
-    downloadFile("cba_benefits_" + slug(s.meta.name) + ".csv", toCsv(benRows));
-
-    const outRows = [["Output", "Unit", "$ per unit", "Source", "Id"]];
-    model.outputs.forEach(o => outRows.push([o.name, o.unit, o.value, o.source, o.id]));
-    downloadFile("cba_outputs_" + slug(s.meta.name) + ".csv", toCsv(outRows));
-
-    showToast("CSV summary and detail exports downloaded.");
+    const csv = rows
+      .map(r => r.map(x => (x == null ? "" : String(x).replace(/"/g, '""'))).join(","))
+      .join("\r\n");
+    downloadFile(slug(model.project.name || "project") + "_summary.csv", csv, "text/csv");
+    showToast("CSV summary downloaded.");
   }
 
   function exportPdf() {
     window.print();
   }
 
-  // ---------- EXCEL IMPORT / EXPORT ----------
-  function ensureXlsxAvailable() {
-    if (typeof XLSX === "undefined") {
-      showToast("Excel library is not loaded. Include XLSX in the HTML to use Excel features.");
-      return false;
-    }
-    return true;
+  // ---------- EXCEL (FABA BEAN TEMPLATE / IMPORT) ----------
+  function buildFabaBeanSheet() {
+    const header = ["Amendment", "Yield t/ha", "Pre sowing Labour", "Treatment Input Cost Only /Ha"];
+    const dataRows = RAW_PLOTS.map(r => [
+      r.Amendment ?? "",
+      r["Yield t/ha"] ?? "",
+      r["Pre sowing Labour"] ?? "",
+      r["Treatment Input Cost Only /Ha"] ?? ""
+    ]);
+    return [header, ...dataRows];
   }
 
-  function createExcelInput() {
-    let input = document.getElementById("excelFile");
-    if (!input) {
-      input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".xlsx,.xls,.csv";
-      input.id = "excelFile";
-      input.style.display = "none";
-      document.body.appendChild(input);
+  function downloadExcelTemplate() {
+    if (typeof XLSX === "undefined") {
+      alert("The SheetJS XLSX library is required for Excel export.");
+      return;
     }
-    return input;
+    const wb = XLSX.utils.book_new();
+
+    const readme = XLSX.utils.aoa_to_sheet([
+      ["Farming CBA Decision Aid – Excel template"],
+      [""],
+      ["Sheets"],
+      ["FabaBeanRaw", "Default 2022 faba bean raw plot dataset used to calibrate treatments."],
+      [""],
+      [
+        "You can overwrite the FabaBeanRaw sheet with your own plot-level data. Keep at least the columns",
+        "Amendment, Yield t/ha, Pre sowing Labour, and Treatment Input Cost Only /Ha."
+      ],
+      [""],
+      [
+        "When you import this workbook in the tool, the faba bean calibration will be updated and treatment",
+        "costs and yield uplifts will be recalculated from your dataset."
+      ]
+    ]);
+    XLSX.utils.book_append_sheet(wb, readme, "ReadMe");
+
+    const fabaAoA = buildFabaBeanSheet();
+    const fabaSheet = XLSX.utils.aoa_to_sheet(fabaAoA);
+    XLSX.utils.book_append_sheet(wb, fabaSheet, "FabaBeanRaw");
+
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadFile("faba_bean_cba_template.xlsx", wbout, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    showToast("Excel template with faba bean dataset downloaded.");
+  }
+
+  function downloadSampleDataset() {
+    if (typeof XLSX === "undefined") {
+      alert("The SheetJS XLSX library is required for Excel export.");
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+
+    const projectSheet = XLSX.utils.aoa_to_sheet([
+      ["Project name", model.project.name],
+      ["Summary", model.project.summary],
+      ["Goal", model.project.goal],
+      ["Organisation", model.project.organisation]
+    ]);
+    XLSX.utils.book_append_sheet(wb, projectSheet, "Project");
+
+    const fabaAoA = buildFabaBeanSheet();
+    const fabaSheet = XLSX.utils.aoa_to_sheet(fabaAoA);
+    XLSX.utils.book_append_sheet(wb, fabaSheet, "FabaBeanRaw");
+
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    downloadFile("faba_bean_cba_sample.xlsx", wbout, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    showToast("Sample Excel workbook with faba bean dataset downloaded.");
   }
 
   function handleParseExcel() {
-    if (!ensureXlsxAvailable()) return;
-    const input = createExcelInput();
-    input.onchange = e => {
+    if (typeof XLSX === "undefined") {
+      alert("The SheetJS XLSX library is required for Excel import.");
+      return;
+    }
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".xlsx,.xlsm,.xlsb";
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.addEventListener("change", async e => {
       const file = e.target.files && e.target.files[0];
+      document.body.removeChild(input);
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => {
-        try {
-          const data = evt.target.result;
-          const wb = XLSX.read(data, { type: "array" });
-          const res = {};
-          const getSheet = name =>
-            wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "" }) : [];
-
-          res.meta = getSheet("Meta");
-          res.outputs = getSheet("Outputs");
-          res.treatments = getSheet("Treatments");
-          res.benefits = getSheet("Benefits");
-          res.costs = getSheet("Costs");
-
-          parsedExcel = res;
-          const nOut = res.outputs.length || 0;
-          const nTreat = res.treatments.length || 0;
-          const nBen = res.benefits.length || 0;
-          const nCost = res.costs.length || 0;
-          showToast(
-            `Excel parsed successfully: ${nOut} outputs, ${nTreat} treatments, ${nBen} benefits, ${nCost} cost items ready to import.`
-          );
-        } catch (err) {
-          console.error(err);
-          showToast("Could not parse Excel file. Check that the template structure is correct.");
-        } finally {
-          e.target.value = "";
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    };
+      try {
+        const buffer = await file.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: "array" });
+        const sheetName =
+          wb.SheetNames.find(n => FABABEAN_SHEET_NAMES.includes(n)) || wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+        parsedExcel = { rawPlots: rows };
+        showToast(`Excel parsed. Using sheet "${sheetName}" as faba bean raw data.`);
+      } catch (err) {
+        console.error(err);
+        alert("Error parsing Excel file.");
+      }
+    });
     input.click();
   }
 
   function commitExcelToModel() {
-    if (!parsedExcel) {
-      showToast("No parsed Excel data found. Click Parse Excel first.");
+    if (!parsedExcel || !parsedExcel.rawPlots || !parsedExcel.rawPlots.length) {
+      alert("No parsed Excel data is available. Please parse an Excel file first.");
       return;
     }
-    const data = parsedExcel;
-    const now = new Date().getFullYear();
-
-    // Meta (optional)
-    if (data.meta && data.meta.length) {
-      const mrow = data.meta[0];
-      if (mrow.ProjectName) model.project.name = mrow.ProjectName;
-      if (mrow.ProjectLead) model.project.lead = mrow.ProjectLead;
-      if (mrow.Analysts) model.project.analysts = mrow.Analysts;
-      if (mrow.Team) model.project.team = mrow.Team;
-      if (mrow.Organisation) model.project.organisation = mrow.Organisation;
-      if (mrow.ContactEmail) model.project.contactEmail = mrow.ContactEmail;
-      if (mrow.ContactPhone) model.project.contactPhone = mrow.ContactPhone;
-      if (mrow.Summary) model.project.summary = mrow.Summary;
-      model.project.lastUpdated = new Date().toISOString().slice(0, 10);
-    }
-
-    // Outputs
-    if (data.outputs && data.outputs.length) {
-      model.outputs = data.outputs.map(row => ({
-        id: uid(),
-        name: row.Name || row.Output || "Output",
-        unit: row.Unit || "unit",
-        value:
-          Number(row.ValuePerUnit ?? row.Value ?? row["$ per unit"] ?? row.Price ?? 0) || 0,
-        source: row.Source || "Input Directly"
-      }));
-    }
-
-    // Treatments
-    const outputNameToId = {};
-    model.outputs.forEach(o => {
-      outputNameToId[o.name.toLowerCase()] = o.id;
-    });
-
-    if (data.treatments && data.treatments.length) {
-      model.treatments = data.treatments.map(row => {
-        const t = {
-          id: uid(),
-          name: row.Name || "Treatment",
-          area: Number(row.AreaHa ?? row["Area (ha)"] ?? 0) || 0,
-          adoption: Number(row.Adoption ?? row["Adoption (0-1)"] ?? 1) || 1,
-          deltas: {},
-          annualCost: Number(row.AnnualCostPerHa ?? row["AnnualCostPerHa"] ?? 0) || 0,
-          materialsCost: Number(row.MaterialsCostPerHa ?? 0) || 0,
-          servicesCost: Number(row.ServicesCostPerHa ?? 0) || 0,
-          capitalCost: Number(row.CapitalCost ?? row.Capital ?? 0) || 0,
-          constrained: String(row.Constrained ?? "Yes").toLowerCase().startsWith("y"),
-          source: row.Source || "Input Directly",
-          replications: Math.max(1, Number(row.Replications ?? 1) || 1),
-          isControl:
-            String(row.IsControl ?? row.Control ?? "").toLowerCase().startsWith("y") ||
-            row.IsControl === 1,
-          notes: row.Notes || ""
-        };
-
-        Object.keys(row).forEach(key => {
-          const m = key.match(/^Delta[_:\s]*(.+)$/i);
-          if (m) {
-            const outName = m[1].trim().toLowerCase();
-            const id = outputNameToId[outName];
-            if (id) {
-              t.deltas[id] = Number(row[key] || 0) || 0;
-            }
-          }
-        });
-
-        model.outputs.forEach(o => {
-          if (!(o.id in t.deltas)) t.deltas[o.id] = 0;
-        });
-        return t;
-      });
-    } else {
-      initTreatmentDeltas();
-    }
-
-    // Benefits
-    if (data.benefits && data.benefits.length) {
-      model.benefits = data.benefits.map(row => ({
-        id: uid(),
-        label: row.Label || "Benefit",
-        category: row.Category || "C4",
-        theme: row.BenefitType || row.Theme || "Other",
-        frequency: row.Frequency || "Annual",
-        startYear: Number(row.StartYear || now) || now,
-        endYear: Number(row.EndYear || now) || now,
-        year: Number(row.Year || row.OnceYear || now) || now,
-        unitValue: Number(row.UnitValue || 0) || 0,
-        quantity: Number(row.Quantity || 0) || 0,
-        abatement: Number(row.Abatement || 0) || 0,
-        annualAmount: Number(row.AnnualAmount || 0) || 0,
-        growthPct: Number(row.GrowthPct || 0) || 0,
-        linkAdoption:
-          String(row.LinkAdoption ?? "true").toLowerCase().startsWith("t") ||
-          String(row.LinkAdoption ?? "true").toLowerCase().startsWith("y"),
-        linkRisk:
-          String(row.LinkRisk ?? "true").toLowerCase().startsWith("t") ||
-          String(row.LinkRisk ?? "true").toLowerCase().startsWith("y"),
-        p0: Number(row.P0 || 0) || 0,
-        p1: Number(row.P1 || 0) || 0,
-        consequence: Number(row.Consequence || 0) || 0,
-        notes: row.Notes || ""
-      }));
-    }
-
-    // Costs
-    if (data.costs && data.costs.length) {
-      model.otherCosts = data.costs.map(row => ({
-        id: uid(),
-        label: row.Label || "Cost item",
-        type: (row.Type || "annual").toString().toLowerCase() === "capital" ? "capital" : "annual",
-        category: row.Category || "Services",
-        annual: Number(row.Annual || 0) || 0,
-        startYear: Number(row.StartYear || now) || now,
-        endYear: Number(row.EndYear || now) || now,
-        capital: Number(row.Capital || 0) || 0,
-        year: Number(row.Year || now) || now,
-        constrained:
-          String(row.Constrained ?? "true").toLowerCase().startsWith("t") ||
-          String(row.Constrained ?? "true").toLowerCase().startsWith("y"),
-        depMethod: (row.DepMethod || "none").toString().toLowerCase(),
-        depLife: Number(row.DepLife || 5) || 5,
-        depRate: Number(row.DepRate || 30) || 30
-      }));
-    }
-
-    initTreatmentDeltas();
+    // Replace RAW_PLOTS content with parsed data
+    RAW_PLOTS.length = 0;
+    parsedExcel.rawPlots.forEach(r => RAW_PLOTS.push(r));
+    applyTrialTreatmentsIfAvailable();
     renderAll();
-    setBasicsFieldsFromModel();
     calcAndRender();
-    showToast("Excel data imported into the model. Results updated.");
-    parsedExcel = null;
+    showToast("Excel data applied. Treatments recalibrated from imported faba bean dataset.");
   }
 
-  function buildTemplateWorkbook(includeSampleRows) {
-    const wb = XLSX.utils.book_new();
-
-    const metaRows = [
-      [
-        "ProjectName",
-        "ProjectLead",
-        "Analysts",
-        "Team",
-        "Organisation",
-        "ContactEmail",
-        "ContactPhone",
-        "Summary"
-      ]
-    ];
-    if (includeSampleRows) {
-      metaRows.push([
-        model.project.name,
-        model.project.lead,
-        model.project.analysts,
-        model.project.team,
-        model.project.organisation,
-        model.project.contactEmail,
-        model.project.contactPhone,
-        model.project.summary
-      ]);
-    }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metaRows), "Meta");
-
-    const outHeader = ["Name", "Unit", "ValuePerUnit", "Source"];
-    const outAoA = [outHeader];
-    if (includeSampleRows) {
-      model.outputs.forEach(o => {
-        outAoA.push([o.name, o.unit, o.value, o.source]);
-      });
-    }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(outAoA), "Outputs");
-
-    const baseTreatColumns = [
-      "Name",
-      "AreaHa",
-      "Adoption",
-      "Replications",
-      "MaterialsCostPerHa",
-      "ServicesCostPerHa",
-      "AnnualCostPerHa",
-      "CapitalCost",
-      "IsControl",
-      "Constrained",
-      "Source",
-      "Notes"
-    ];
-    const deltaCols = model.outputs.map(o => "Delta_" + o.name);
-    const treatHeader = baseTreatColumns.concat(deltaCols);
-    const treatAoA = [treatHeader];
-    if (includeSampleRows) {
-      model.treatments.forEach(t => {
-        const baseRow = [
-          t.name,
-          t.area,
-          t.adoption,
-          t.replications || 1,
-          t.materialsCost || 0,
-          t.servicesCost || 0,
-          t.annualCost || 0,
-          t.capitalCost || 0,
-          t.isControl ? "Yes" : "No",
-          t.constrained ? "Yes" : "No",
-          t.source,
-          t.notes || ""
-        ];
-        const deltasRow = model.outputs.map(o => t.deltas[o.id] ?? 0);
-        treatAoA.push(baseRow.concat(deltasRow));
-      });
-    }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(treatAoA), "Treatments");
-
-    const benHeader = [
-      "Label",
-      "Category",
-      "BenefitType",
-      "Frequency",
-      "StartYear",
-      "EndYear",
-      "Year",
-      "UnitValue",
-      "Quantity",
-      "Abatement",
-      "AnnualAmount",
-      "GrowthPct",
-      "LinkAdoption",
-      "LinkRisk",
-      "P0",
-      "P1",
-      "Consequence",
-      "Notes"
-    ];
-    const benAoA = [benHeader];
-    if (includeSampleRows) {
-      model.benefits.forEach(b => {
-        benAoA.push([
-          b.label,
-          b.category,
-          b.theme || "",
-          b.frequency,
-          b.startYear,
-          b.endYear,
-          b.year,
-          b.unitValue,
-          b.quantity,
-          b.abatement,
-          b.annualAmount,
-          b.growthPct,
-          b.linkAdoption ? "Yes" : "No",
-          b.linkRisk ? "Yes" : "No",
-          b.p0,
-          b.p1,
-          b.consequence,
-          b.notes || ""
-        ]);
-      });
-    }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(benAoA), "Benefits");
-
-    const costHeader = [
-      "Label",
-      "Type",
-      "Category",
-      "Annual",
-      "StartYear",
-      "EndYear",
-      "Capital",
-      "Year",
-      "DepMethod",
-      "DepLife",
-      "DepRate",
-      "Constrained"
-    ];
-    const costAoA = [costHeader];
-    if (includeSampleRows) {
-      model.otherCosts.forEach(c => {
-        costAoA.push([
-          c.label,
-          c.type,
-          c.category,
-          c.annual,
-          c.startYear,
-          c.endYear,
-          c.capital,
-          c.year,
-          c.depMethod,
-          c.depLife,
-          c.depRate,
-          c.constrained ? "Yes" : "No"
-        ]);
-      });
-    }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(costAoA), "Costs");
-
-    return wb;
-  }
-
-  function downloadExcelTemplate() {
-    if (!ensureXlsxAvailable()) return;
-    const wb = buildTemplateWorkbook(false);
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    downloadBinaryFile("farming_cba_template.xlsx", wbout, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    showToast("Excel template downloaded. Use this structure for imports.");
-  }
-
-  function downloadSampleDataset() {
-    if (!ensureXlsxAvailable()) return;
-    const wb = buildTemplateWorkbook(true);
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    downloadBinaryFile(
-      "farming_cba_sample_australia.xlsx",
-      wbout,
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    showToast("Sample Excel dataset downloaded using a realistic Australian nitrogen trial scenario.");
-  }
-
-  // ---------- COPILOT HELPER ----------
-  async function copyToClipboard(text) {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (_) {}
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand("copy");
-      ta.remove();
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function buildScenarioForCopilot() {
-    const summary = buildSummaryForCsv();
-    const base = summary.results;
-
+  // ---------- COPILOT PAYLOAD ----------
+  function buildCopilotPayload() {
     const rate = model.time.discBase;
     const adoptMul = model.adoption.base;
     const risk = model.risk.base;
+    const all = computeAll(rate, adoptMul, risk, model.sim.bcrMode);
 
-    const treatmentSummaries = model.treatments.slice(0, 10).map(t => {
-      const m = computeSingleTreatmentMetrics(
-        t,
-        rate,
-        model.time.years,
-        adoptMul,
-        risk
-      );
-      return {
-        name: t.name,
-        areaHa: t.area,
-        adoption: t.adoption,
-        replications: t.replications || 1,
-        isControl: !!t.isControl,
-        pvBenefits: m.pvBen,
-        pvCosts: m.pvCost,
-        npv: m.npv,
-        bcr: m.bcr,
-        irr: m.irrVal,
-        paybackYears: m.pb
-      };
-    });
-
-    const npvArr = model.sim.results.npv || [];
-    const bcrArr = model.sim.results.bcr || [];
-    let simSummary = null;
-    if (npvArr.length) {
-      const sortedNpv = [...npvArr].sort((a, b) => a - b);
-      const N = sortedNpv.length;
-      const meanNpv = sortedNpv.reduce((a, c) => a + c, 0) / N;
-      const medianNpv =
-        (sortedNpv[Math.floor((N - 1) / 2)] + sortedNpv[Math.ceil((N - 1) / 2)]) / 2;
-      const npvMin = sortedNpv[0];
-      const npvMax = sortedNpv[sortedNpv.length - 1];
-      const probPosNpv = npvArr.filter(v => v > 0).length / N;
-
-      const validBcr = bcrArr.filter(x => isFinite(x));
-      let bcrMin = null;
-      let bcrMax = null;
-      let bcrMean = null;
-      let bcrMedian = null;
-      let probBcrAbove1 = null;
-      let probBcrAboveTarget = null;
-      if (validBcr.length) {
-        const sortedBcr = [...validBcr].sort((a, b) => a - b);
-        const NB = sortedBcr.length;
-        bcrMin = sortedBcr[0];
-        bcrMax = sortedBcr[NB - 1];
-        bcrMean = sortedBcr.reduce((a, c) => a + c, 0) / NB;
-        bcrMedian =
-          (sortedBcr[Math.floor((NB - 1) / 2)] + sortedBcr[Math.ceil((NB - 1) / 2)]) / 2;
-        probBcrAbove1 = validBcr.filter(x => x > 1).length / NB;
-        probBcrAboveTarget = validBcr.filter(x => x > model.sim.targetBCR).length / NB;
-      }
-
-      simSummary = {
-        runs: N,
-        discountLow: model.time.discLow,
-        discountBase: model.time.discBase,
-        discountHigh: model.time.discHigh,
-        adoptionLow: model.adoption.low,
-        adoptionBase: model.adoption.base,
-        adoptionHigh: model.adoption.high,
-        riskLow: model.risk.low,
-        riskBase: model.risk.base,
-        riskHigh: model.risk.high,
-        npvMin,
-        npvMax,
-        npvMean: meanNpv,
-        npvMedian: medianNpv,
-        probNpvPositive: probPosNpv,
-        bcrMin,
-        bcrMax,
-        bcrMean,
-        bcrMedian,
-        probBcrAbove1,
-        probBcrAboveTarget: probBcrAboveTarget,
-        targetBCR: model.sim.targetBCR
-      };
-    }
+    const treatmentsRanked = [...model.treatments]
+      .map(t => {
+        const m = computeSingleTreatmentMetrics(
+          t,
+          rate,
+          model.time.years,
+          adoptMul,
+          risk
+        );
+        return {
+          name: t.name,
+          isControl: !!t.isControl,
+          areaHa: Number(t.area) || 0,
+          annualGrossMargin: m.gm,
+          pvBenefits: m.pvBen,
+          pvCosts: m.pvCost,
+          bcr: m.bcr,
+          npv: m.npv,
+          irrPct: m.irrVal,
+          roiPct: m.roi
+        };
+      })
+      .sort((a, b) => {
+        const A = isFinite(a.bcr) ? a.bcr : -Infinity;
+        const B = isFinite(b.bcr) ? b.bcr : -Infinity;
+        return B - A;
+      });
 
     return {
-      project: summary.meta,
-      parameters: summary.params,
-      baseCase: {
-        pvBenefits: base.pvBenefits,
-        pvCosts: base.pvCosts,
-        npv: base.npv,
-        bcr: base.bcr,
-        irr: base.irrVal,
-        mirr: base.mirrVal,
-        roi: base.roi,
-        annualGrossMargin: base.annualGM,
-        profitMargin: base.profitMargin,
-        paybackYears: base.paybackYears
+      toolName: "Farming CBA Decision Aid – Faba bean trial",
+      project: {
+        name: model.project.name,
+        summary: model.project.summary,
+        goal: model.project.goal,
+        organisation: model.project.organisation,
+        stakeholders: model.project.stakeholders
       },
-      treatmentSummaries,
-      simulationSummary: simSummary
+      timeSettings: {
+        startYear: model.time.startYear,
+        analysisYears: model.time.years,
+        discountRateBasePct: model.time.discBase,
+        discountRateLowPct: model.time.discLow,
+        discountRateHighPct: model.time.discHigh
+      },
+      riskAndAdoption: {
+        adoptionBase: model.adoption.base,
+        adoptionLow: model.adoption.low,
+        adoptionHigh: model.adoption.high,
+        riskBase: model.risk.base,
+        riskLow: model.risk.low,
+        riskHigh: model.risk.high
+      },
+      baseCaseResults: {
+        pvBenefits: all.pvBenefits,
+        pvCosts: all.pvCosts,
+        npv: all.npv,
+        bcr: all.bcr,
+        irrPct: all.irrVal,
+        mirrPct: all.mirrVal,
+        roiPct: all.roi,
+        annualGrossMargin: all.annualGM,
+        grossProfitMarginPct: all.profitMargin,
+        paybackYears: all.paybackYears
+      },
+      treatmentsRanked,
+      fabaBeanDataset: {
+        hasRawData: RAW_PLOTS.length > 0,
+        sheetNamesExpected: FABABEAN_SHEET_NAMES,
+        numberOfRawRows: RAW_PLOTS.length
+      },
+      notesForAssistant: [
+        "Write a clear, non-technical policy brief for decision makers.",
+        "Explain what the faba bean trial is testing, what the main treatments are, and how yield and costs differ from control.",
+        "Use the NPV, BCR, IRR, and payback to comment on whether the package of treatments is economically attractive.",
+        "Highlight uncertainty and sensitivity to adoption, risk, and discount rates.",
+        "Explain what information would help firm up the estimates (for example, more seasons of data or more sites)."
+      ]
     };
   }
 
   function handleOpenCopilotClick() {
-    calcAndRender();
-    const scenario = buildScenarioForCopilot();
-    let scenarioJson = JSON.stringify(scenario, null, 2);
-    const maxJsonChars = 5000;
-    if (scenarioJson.length > maxJsonChars) {
-      scenarioJson = scenarioJson.slice(0, maxJsonChars) + "\n... (scenario truncated to fit character limits)";
+    const payload = buildCopilotPayload();
+    const json = JSON.stringify(payload, null, 2);
+    const preview = $("#copilotPreview");
+    if (preview) preview.value = json;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(json)
+        .then(() => {
+          showToast("Scenario summary copied to clipboard for your policy brief.");
+        })
+        .catch(() => {
+          showToast("Unable to copy automatically. Please copy the JSON from the preview box.");
+        });
+    } else {
+      showToast("Copying not supported. Please copy the JSON from the preview box.");
     }
+  }
 
-    const promptText =
-`You are an agricultural economics assistant helping to interpret a cost benefit analysis for a farming project.
+  // ---------- TOOLTIP FOR INDICATORS ----------
+  function applyIndicatorTooltips() {
+    const map = {
+      pvBenefits:
+        "Present value of all benefits, combining treatment output gains and additional benefits, discounted at the base rate over the analysis period.",
+      pvCosts:
+        "Present value of all treatment and project costs, including capital and operating items, discounted at the base rate.",
+      npv:
+        "Net present value, equal to present value of benefits minus present value of costs. Positive values indicate that benefits exceed costs.",
+      bcr:
+        "Benefit–cost ratio, equal to present value of benefits divided by present value of costs, using the chosen denominator (all or constrained costs).",
+      irr:
+        "Internal rate of return, the discount rate at which the net present value of the cash flow stream is zero.",
+      mirr:
+        "Modified internal rate of return, using the MIRR finance and reinvestment rates set in the Time and risk settings tab.",
+      roi:
+        "Return on investment, calculated as NPV divided by present value of costs, expressed as a percentage.",
+      grossMargin:
+        "Average annual gross margin, equal to annual benefits minus annual operating costs for the whole project.",
+      profitMargin:
+        "Gross profit margin, equal to annual gross margin as a percentage of annual benefits.",
+      payback:
+        "Discounted payback period, the first year when the cumulative discounted cash flow becomes non-negative.",
+      simNpvMin:
+        "Minimum net present value across all simulation runs.",
+      simNpvMax:
+        "Maximum net present value across all simulation runs.",
+      simNpvMean:
+        "Mean net present value across all simulation runs.",
+      simNpvMedian:
+        "Median net present value across all simulation runs.",
+      simNpvProb:
+        "Estimated probability that net present value is greater than zero, based on simulation runs.",
+      simBcrMin:
+        "Minimum benefit–cost ratio across all simulation runs.",
+      simBcrMax:
+        "Maximum benefit–cost ratio across all simulation runs.",
+      simBcrMean:
+        "Mean benefit–cost ratio across all simulation runs.",
+      simBcrMedian:
+        "Median benefit–cost ratio across all simulation runs.",
+      simBcrProb1:
+        "Estimated probability that the benefit–cost ratio exceeds 1.0.",
+      simBcrProbTarget:
+        "Estimated probability that the benefit–cost ratio exceeds the user-defined target."
+    };
 
-Using the JSON scenario below, write a clear and accessible policy briefing for decision makers in agriculture and natural resource management in Australia. Structure the briefing in well separated sections with short headings, such as: Project context, Methods and assumptions, Base case economic results, Risk and uncertainty, Adoption and implementation issues, and Policy conclusions.
-
-Explain in plain language what the project does, why it matters, and how the cost benefit analysis was carried out. Describe the main economic indicators including present value of benefits and costs, net present value, benefit cost ratio, internal rate of return, modified internal rate of return, return on investment, annual gross margin, profit margin, and payback period. Interpret the results for each indicator in words that a nontechnical reader can understand.
-
-If simulation results are available, summarise what they show about the probability that net present value is positive, the probability that the benefit cost ratio is above 1, and the probability that it is above the target threshold. Explain what these probabilities mean in practical terms.
-
-Discuss how adoption, risk, and implementation constraints could influence the results, and outline any important distributional or implementation considerations that policy makers should be aware of.
-
-Conclude with a clear recommendation on whether the project appears economically attractive, under what conditions it is most attractive, and what further evidence or monitoring might be useful.
-
-Write only in paragraphs with no bullet points or numbered lists. Use professional but lay friendly language. Aim for the level of detail that would correspond to roughly three to five pages of text. You may include self contained tables if they help to present the main numbers clearly.
-
-SCENARIO JSON:
-\`\`\`json
-${scenarioJson}
-\`\`\`
-`;
-
-    copyToClipboard(promptText).then(ok => {
-      if (ok) {
-        showToast("Copilot briefing prompt copied. A new Copilot tab will open.");
-      } else {
-        showToast("Could not copy automatically. Use the Copilot tab to copy the text manually.");
-      }
-      window.open("https://copilot.microsoft.com/", "_blank");
+    Object.keys(map).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.title = map[id];
     });
   }
 
   // ---------- INIT ----------
   document.addEventListener("DOMContentLoaded", () => {
+    // Load default faba bean treatments from embedded dataset
+    applyTrialTreatmentsIfAvailable();
     initTabs();
     bindBasics();
     initAddButtons();
     renderAll();
+    setBasicsFieldsFromModel();
     calcAndRender();
+    applyIndicatorTooltips();
   });
 })();
